@@ -25,7 +25,7 @@ repos:
     rev: v0.782
     hooks:
     -   id: mypy
-        additional_dependencies: [returns]
+        additional_dependencies: [returns, "pydantic"]
         exclude: ^(docs/|example-plugin/|tests/fixtures)
 
   - repo: https://gitlab.com/pycqa/flake8
