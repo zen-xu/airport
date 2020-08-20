@@ -15,8 +15,7 @@ jobs:
 
       - name: Linting
         run: |
-          pip install wheel
-          pip install pre-commit
+          pip install wheel pre-commit returns
           pre-commit run --all-files
   Tests:
     needs: Linting
