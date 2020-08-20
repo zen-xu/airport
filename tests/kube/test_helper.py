@@ -57,6 +57,7 @@ def test_is_huge_page_resource_name(name):
         pytest.param("000-", marks=pytest.mark.xfail),
         pytest.param("/apple", marks=pytest.mark.xfail),
         pytest.param("0" * 64, marks=pytest.mark.xfail),
+        pytest.param("a/b/c", marks=pytest.mark.xfail),
     ],
 )
 def test_is_qualified_name(name):
