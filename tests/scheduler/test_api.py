@@ -174,7 +174,6 @@ class TestResourceInfo:
     def test_fit_deta(
         self, left_resource: Resource, right_resource: Resource, excepted: Resource
     ):
-        print(excepted)
         assert left_resource.fit_delta(right_resource) == excepted
 
     @parametrize(
