@@ -9,6 +9,7 @@ license = "Apache License 2.0"
 python = "^3.8"
 returns = "^0.14.0"
 kubernetes = "^11.0.0"
+pydantic = "^1.6.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.0.1"
