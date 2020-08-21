@@ -1,49 +1,40 @@
-from collections import defaultdict
-from dataclasses import dataclass
-from dataclasses import field
 from decimal import Decimal
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Type
-from typing import TypeVar
 from typing import Union
 
 from kubernetes.utils.quantity import parse_quantity
+from pydantic import BaseModel
+from pydantic.fields import Field
 from returns.result import Failure
 from returns.result import Result
 from returns.result import Success
 
 from airport.kube import helper
-from airport.traits import Clone
 
 
 MinMilliCpu: int = 10
 MinMilliScalarResources: int = 10
 MinMemory: int = 10 * 1024 * 1024
 
-T = TypeVar("T", bound="Resource")
 
-
-@dataclass
-class Resource(Clone):
-    milli_cpu: Decimal = field(default_factory=Decimal)
-    memory: Decimal = field(default_factory=Decimal)
-    scalar_resources: Dict[str, Decimal] = field(
-        default_factory=lambda: defaultdict(Decimal)
-    )
+class Resource(BaseModel):
+    milli_cpu: Decimal = Decimal(0)
+    memory: Decimal = Decimal(0)
+    scalar_resources: Dict[str, Decimal] = Field(default_factory=dict)
     max_task_num: Optional[int] = None
-
-    def __post_init__(self):
-        self.scalar_resources = defaultdict(Decimal, self.scalar_resources)
 
     @property
     def resource_names(self) -> List[str]:
         return ["cpu", "memory", *self.scalar_resources.keys()]
 
     @classmethod
-    def from_resource_list(cls: Type[T], resource_list: Dict[str, str]) -> T:
+    def from_resource_list(
+        cls: Type["Resource"], resource_list: Dict[str, str]
+    ) -> "Resource":
         resource = cls()
 
         for resource_name, value in resource_list.items():
@@ -57,7 +48,7 @@ class Resource(Clone):
             elif resource_name == "pods":
                 resource.max_task_num = int(parse_quantity(value))
             elif helper.is_scalar_resource_name(resource_name):
-                resource.scalar_resources[resource_name] += parse_quantity(value) * 1000
+                resource.scalar_resources[resource_name] = parse_quantity(value) * 1000
 
         return resource
 
@@ -68,7 +59,7 @@ class Resource(Clone):
             return Success(self.memory)
         else:
             try:
-                return Success(dict(self.scalar_resources)[resource_name])
+                return Success(self.scalar_resources[resource_name])
             except KeyError:
                 return Failure(ValueError(f"Unknown resource {resource_name}"))
 
@@ -100,12 +91,12 @@ class Resource(Clone):
             return Success(self.memory < MinMemory)
         else:
             try:
-                quantity = dict(self.scalar_resources)[resource_name]
+                quantity = self.scalar_resources[resource_name]
                 return Success(quantity < MinMilliScalarResources)
             except KeyError:
                 return Failure(ValueError(f"Unknown resource {resource_name}"))
 
-    def set_max_resource(self: T, other: T) -> T:
+    def set_max_resource(self, other: "Resource") -> "Resource":
         self.milli_cpu = max(self.milli_cpu, other.milli_cpu)
         self.memory = max(self.memory, other.memory)
 
@@ -116,7 +107,7 @@ class Resource(Clone):
 
         return self
 
-    def fit_delta(self: T, other: T) -> T:
+    def fit_delta(self, other: "Resource") -> "Resource":
         if other.milli_cpu > 0:
             self.milli_cpu -= other.milli_cpu + MinMilliCpu
 
@@ -125,6 +116,7 @@ class Resource(Clone):
 
         for resource_name, other_quant in other.scalar_resources.items():
             if other_quant > 0:
+                self.scalar_resources.setdefault(resource_name, Decimal(0))
                 self.scalar_resources[resource_name] -= (
                     other_quant + MinMilliScalarResources
                 )
@@ -154,11 +146,12 @@ class Resource(Clone):
                 handle_value = increase_value
             else:
                 handle_value = decrease_value
+            handle_value.scalar_resources.setdefault(resource_name, Decimal(0))
             handle_value.scalar_resources[resource_name] += abs(quant - other_quant)
 
         return increase_value, decrease_value
 
-    def less_equal_strict(self: T, other: T) -> bool:
+    def less_equal_strict(self, other: "Resource") -> bool:
         if self.milli_cpu > other.milli_cpu or self.memory > other.memory:
             return False
 
@@ -170,7 +163,7 @@ class Resource(Clone):
 
         return True
 
-    def greater_equal_strict(self: T, other: T) -> bool:
+    def greater_equal_strict(self, other: "Resource") -> bool:
         return other.less_equal_strict(self)
 
     def __eq__(self, other) -> bool:
@@ -207,7 +200,7 @@ class Resource(Clone):
 
         return True
 
-    def __lt__(self: T, other: T) -> bool:
+    def __lt__(self, other: "Resource") -> bool:
         if self.milli_cpu > other.milli_cpu or self.memory > other.memory:
             return False
 
@@ -223,39 +216,42 @@ class Resource(Clone):
 
         return True
 
-    def __le__(self: T, other: T) -> bool:
+    def __le__(self, other: "Resource") -> bool:
         return self == other or self < other
 
-    def __add__(self: T, other: T) -> T:
-        resource = self.clone()
+    def __add__(self, other: "Resource") -> "Resource":
+        resource: Resource = self.copy(deep=True)
         resource.milli_cpu += other.milli_cpu
         resource.memory += other.memory
 
         for resource_name, quant in other.scalar_resources.items():
+            resource.scalar_resources.setdefault(resource_name, Decimal(0))
             resource.scalar_resources[resource_name] += quant
 
         return resource
 
-    def __sub__(self: T, other: T) -> T:
+    def __sub__(self, other: "Resource") -> "Resource":
         assert (
             self >= other
         ), f"resource is not sufficient to do operation: {self} sub {other}"
 
-        resource = self.clone()
+        resource: Resource = self.copy(deep=True)
         resource.milli_cpu -= other.milli_cpu
         resource.memory -= other.memory
 
         for resource_name, quant in other.scalar_resources.items():
+            resource.scalar_resources.setdefault(resource_name, Decimal(0))
             resource.scalar_resources[resource_name] -= quant
 
         return resource
 
-    def __mul__(self: T, ratio: int) -> T:
-        resource = self.clone()
+    def __mul__(self, ratio: int) -> "Resource":
+        resource: Resource = self.copy(deep=True)
 
         resource.milli_cpu *= ratio
         resource.memory *= ratio
         for resource_name, quant in resource.scalar_resources.items():
+            resource.scalar_resources.setdefault(resource_name, Decimal(0))
             resource.scalar_resources[resource_name] *= ratio
 
         return resource
