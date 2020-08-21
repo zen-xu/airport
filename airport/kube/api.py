@@ -31,6 +31,10 @@ class OwnerReference(KubeModel):
     blockOwnerDeletion: Optional[bool]
 
 
+class LocalObjectReference(KubeModel):
+    name: Optional[str]
+
+
 class ObjectMeta(KubeModel):
     name: Optional[str]
     generateName: Optional[str]
@@ -130,3 +134,184 @@ class PersistentVolumeClaimStatus(KubeModel):
 class PersistentVolumeClaim(TypeMeta, ObjectMeta):
     spec: Optional[PersistentVolumeClaimSpec]
     status: Optional[PersistentVolumeClaimStatus]
+
+
+class KeyToPath(KubeModel):
+    pass
+
+
+class HostPathType(KubeModel):
+    pass
+
+
+class HostPathVolumeSource(KubeModel):
+    path: str
+    type: Optional[HostPathType]
+
+
+class StorageMedium(KubeEnum):
+    Default = ""
+    Memory = "Memory"
+    HugePages = "HugePages"
+
+
+class EmptyDirVolumeSource(KubeModel):
+    medium: Optional[StorageMedium]
+    sizeLimit: Optional[Decimal]
+
+
+class SecretVolumeSource(KubeModel):
+    secretName: Optional[str]
+    items: List[KeyToPath] = []
+    defaultMode: Optional[int] = 0o0644
+    optional: Optional[bool]
+
+
+class ConfigMapVolumeSource(LocalObjectReference):
+    items: List[KeyToPath]
+    defaultMode: Optional[int] = 0o0644
+    optional: Optional[bool]
+
+
+class CSIVolumeSource(KubeModel):
+    driver: str
+    readOnly: bool = False
+    fsType: Optional[str]
+    volumeAttributes: Dict[str, str] = {}
+    nodePublishSecretRef: Optional[LocalObjectReference]
+
+
+class VolumeSource(KubeModel):
+    hostPath: Optional[HostPathVolumeSource]
+    emptyDIr: Optional[EmptyDirVolumeSource]
+    secret: Optional[SecretVolumeSource]
+    persistentVolumeClaim: Optional[PersistentVolumeClaim]
+    configMap: Optional[ConfigMapVolumeSource]
+    csi: Optional[CSIVolumeSource]
+    # Unsupported
+    # --------------------
+    # GCEPersistentDisk
+    # AWSElasticBlockStore
+    # GitRepo
+    # NFS
+    # ISCSI
+    # Glusterfs
+    # RBD
+    # FlexVolume
+    # Cinder
+    # CephFS
+    # Flocker
+    # DownwardAPI
+    # FC
+    # AzureFile
+    # VsphereVolume
+    # Quobyte
+    # AzureDisk
+    # PhotonPersistentDisk
+    # Projected
+    # PortworxVolume
+    # ScaleIO
+
+
+class Volume(VolumeSource):
+    name: str
+
+
+class Container(KubeModel):
+    pass
+
+
+class ContainerPort(KubeModel):
+    pass
+
+
+class EnvFromSource(KubeModel):
+    pass
+
+
+class EnvVar(KubeModel):
+    pass
+
+
+class VolumeMount(KubeModel):
+    pass
+
+
+class VolumeDevice(KubeModel):
+    pass
+
+
+class Probe(KubeModel):
+    pass
+
+
+class TerminationMessagePolicy(KubeEnum):
+    pass
+
+
+class PullPolicy(KubeEnum):
+    pass
+
+
+class SecurityContext(KubeModel):
+    pass
+
+
+class Lifecycle(KubeModel):
+    pass
+
+
+class EphemeralContainerCommon(KubeModel):
+    name: str
+    image: str
+    command: List[str] = []
+    args: List[str] = []
+    workingDir: Optional[str]
+    ports: List[ContainerPort] = []
+    envFrom: List[EnvFromSource] = []
+    env: List[EnvVar] = []
+    resources: ResourceRequirements
+    volumeMounts: List[VolumeMount] = []
+    volumeDevice: List[VolumeDevice] = []
+    livenessProbe: Optional[Probe]
+    readinessProbe: Optional[Probe]
+    startupProbe: Optional[Probe]
+    lifecycle: Optional[Lifecycle]
+    terminationMessagePath: Optional[str]
+    terminationMessagePolicy: Optional[TerminationMessagePolicy]
+    imagePullPolicy: Optional[PullPolicy]
+    securityContext: Optional[SecurityContext]
+    stdin: bool = False
+    stdinOnce: bool = False
+    tty: bool = False
+
+
+class EphemeralContainer(EphemeralContainerCommon):
+    targetContainerName: Optional[str]
+
+
+class RestartPolicy(KubeEnum):
+    Always = "Always"
+    OnFailure = "OnFailure"
+    Never = "Never"
+
+
+class DNSPolicy(KubeEnum):
+    ClusterFirstWithHostNet = "ClusterFirstWithHostNet"
+    ClusterFirst = "ClusterFirst"
+    Default = "Default"
+    DnsNone = "None"
+
+
+class PodSpec(KubeModel):
+    volumes: List[Volume] = []
+    initContainers: List[Container] = []
+    ephemeralContainers: List[EphemeralContainer] = []
+    restartPolicy: Optional[RestartPolicy]
+    terminationGracePeriodSeconds: int = 30
+    activeDeadlineSeconds: Optional[int]
+    dnsPolicy: DNSPolicy
+
+
+class PodTemplateSpec(ObjectMeta):
+    spec: Optional[PodSpec]
