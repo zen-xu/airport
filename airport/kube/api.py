@@ -3,10 +3,13 @@ from decimal import Decimal
 from enum import Enum
 from typing import Dict
 from typing import List
+from typing import Literal
 from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import BaseModel
+from pydantic.fields import Field
 
 
 class KubeModel(BaseModel):
@@ -15,6 +18,9 @@ class KubeModel(BaseModel):
 
 class KubeEnum(str, Enum):
     ...
+
+
+ResourceQuantity = Decimal
 
 
 class TypeMeta(KubeModel):
@@ -137,11 +143,20 @@ class PersistentVolumeClaim(TypeMeta, ObjectMeta):
 
 
 class KeyToPath(KubeModel):
-    pass
+    key: str
+    path: str
+    mode: Optional[int] = Field(..., ge=0, le=0o777)
 
 
-class HostPathType(KubeModel):
-    pass
+class HostPathType(KubeEnum):
+    Unset = ""
+    DirectoryOrCreate = "DirectoryOrCreate"
+    Directory = "Directory"
+    FileOrCreate = "FileOrCreate"
+    File = "File"
+    Socket = "Socket"
+    CharDevice = "CharDevice"
+    BlockDevice = "BlockDevice"
 
 
 class HostPathVolumeSource(KubeModel):
@@ -217,48 +232,160 @@ class Volume(VolumeSource):
     name: str
 
 
-class Container(KubeModel):
-    pass
-
-
 class ContainerPort(KubeModel):
-    pass
+    name: Optional[str]
+    hostPort: Optional[int] = Field(..., gt=0, lt=65536)
+    containerPort: Optional[int] = Field(..., gt=0, lt=65536)
+    protocol: Literal["TCP", "UDP", "SCTP"] = "TCP"
+    hostIP: Optional[str]
+
+
+class ConfigMapEnvSource(LocalObjectReference):
+    optional: Optional[bool]
+
+
+class SecretEnvSource(KubeModel):
+    optional: Optional[bool]
 
 
 class EnvFromSource(KubeModel):
-    pass
+    prefix: str
+    configMapRef: Optional[ConfigMapEnvSource]
+    secretRef: Optional[SecretEnvSource]
+
+
+class ObjectFieldSelector(KubeModel):
+    apiVersion: Optional[str]
+    fieldPath: str
+
+
+class ResourceFieldSelector(KubeModel):
+    containerName: Optional[str]
+    resource: str
+    divisor: ResourceQuantity
+
+
+class ConfigMapKeySelector(LocalObjectReference):
+    key: str
+    optional: Optional[bool]
+
+
+class SecretKeySelector(LocalObjectReference):
+    key: str
+    optional: Optional[bool]
+
+
+class EnvVarSource(KubeModel):
+    fieldRef: Optional[ObjectFieldSelector]
+    resourceFieldRef: Optional[ResourceFieldSelector]
+    configMapKeyRef: Optional[ConfigMapKeySelector]
+    secretKeyRef: Optional[SecretKeySelector]
 
 
 class EnvVar(KubeModel):
-    pass
+    name: str
+    value: str = ""
+    valueFrom: Optional[EnvVarSource]
 
 
 class VolumeMount(KubeModel):
-    pass
+    name: str
+    mountPath: str
+    subPath: str = ""
+    readOnly: bool = False
+    mountPropagation: Literal["None", "HostToContainer", "Bidirectional"] = "None"
+    subPathExpr: str = ""
 
 
 class VolumeDevice(KubeModel):
-    pass
+    name: str
+    devicePath: str
 
 
-class Probe(KubeModel):
-    pass
+class ExecAction(KubeModel):
+    command: List[str] = []
 
 
-class TerminationMessagePolicy(KubeEnum):
-    pass
+class HttpHeader(KubeModel):
+    name: str
+    value: str
 
 
-class PullPolicy(KubeEnum):
-    pass
+class HTTPGetAction(KubeModel):
+    path: Optional[str]
+    port: Union[int, str]
+    host: Optional[str]
+    httpSchema: Literal["HTTP", "HTTPS"] = Field("HTTP", alias="schema")
+    httpHeaders: List[HttpHeader] = []
+
+
+class TCPSocketAction(KubeModel):
+    port: Union[str, int]
+    host: Optional[str]
+
+
+class Handler(KubeModel):
+    exec: Optional[ExecAction]
+    httpGet: Optional[HTTPGetAction]
+    tcpSocket: Optional[TCPSocketAction]
+
+
+class Probe(Handler):
+    initialDelaySeconds: Optional[int]
+    timeoutSeconds: int = 1
+    periodSeconds: int = 10
+    successThreshold: int = 1
+    failureThreshold: int = 3
+
+
+Capability = str
+
+
+class Capabilities(KubeModel):
+    add: List[Capability] = []
+    drop: List[Capability] = []
+
+
+class SELinuxOptions(KubeModel):
+    user: Optional[str]
+    role: Optional[str]
+    type: Optional[str]
+    level: Optional[str]
+
+
+class WindowsSecurityContextOptions(KubeModel):
+    gmsaCredentialSpecName: Optional[str]
+    gmsaCredentialSpec: Optional[str]
+    runAsUserName: Optional[str]
 
 
 class SecurityContext(KubeModel):
-    pass
+    capabilities: Optional[Capabilities]
+    privileged: bool = False
+    seLinuxOptions: Optional[SELinuxOptions]
+    windowsOptions: Optional[WindowsSecurityContextOptions]
+    runAsUser: Optional[int]
+    runAsGroup: Optional[int]
+    runAsNonRoot: Optional[bool]
+    readOnlyRootFilesystem: bool = False
+    allowPrivilegeEscalation: Optional[bool]
+    procMount: Literal["Default", "Unmasked"] = "Default"
 
 
 class Lifecycle(KubeModel):
-    pass
+    postStart: Optional[Handler]
+    preStop: Optional[Handler]
+
+
+class TerminationMessagePolicy(KubeEnum):
+    File = "File"
+    FallbackToLogsOnError = "FallbackToLogsOnError"
+
+
+class PullPolicy(KubeEnum):
+    Always = "Always"
+    Never = "Never"
+    IfNotPresent = "IfNotPresent"
 
 
 class EphemeralContainerCommon(KubeModel):
@@ -278,8 +405,8 @@ class EphemeralContainerCommon(KubeModel):
     startupProbe: Optional[Probe]
     lifecycle: Optional[Lifecycle]
     terminationMessagePath: Optional[str]
-    terminationMessagePolicy: Optional[TerminationMessagePolicy]
-    imagePullPolicy: Optional[PullPolicy]
+    terminationMessagePolicy: TerminationMessagePolicy = TerminationMessagePolicy.File
+    imagePullPolicy: PullPolicy = PullPolicy.Always
     securityContext: Optional[SecurityContext]
     stdin: bool = False
     stdinOnce: bool = False
@@ -301,6 +428,30 @@ class DNSPolicy(KubeEnum):
     ClusterFirst = "ClusterFirst"
     Default = "Default"
     DnsNone = "None"
+
+
+class Container(KubeModel):
+    name: str
+    image: Optional[str]
+    command: List[str] = []
+    args: List[str] = []
+    workingDir: Optional[str]
+    ports: List[ContainerPort] = []
+    env: List[EnvVar] = []
+    resources: Optional[ResourceRequirements]
+    volumeMounts: List[VolumeMount] = []
+    volumeDevices: List[VolumeDevice] = []
+    livenessProbe: Optional[Probe]
+    readinessProbe: Optional[Probe]
+    startupProbe: Optional[Probe]
+    lifecycle: Optional[Lifecycle]
+    terminationMessagePath: str = "/dev/termination-log"
+    terminationMessagePolicy: TerminationMessagePolicy = TerminationMessagePolicy.File
+    imagePullPolicy: PullPolicy = PullPolicy.Always
+    securityContext: Optional[SecurityContext]
+    stdin: bool = False
+    stdinOnce: bool = False
+    tty: bool = False
 
 
 class PodSpec(KubeModel):
