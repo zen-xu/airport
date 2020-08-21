@@ -8,7 +8,6 @@ from typing import Union
 
 from kubernetes.utils.quantity import parse_quantity
 from pydantic import BaseModel
-from pydantic.fields import Field
 from returns.result import Failure
 from returns.result import Result
 from returns.result import Success
@@ -24,7 +23,7 @@ MinMemory: int = 10 * 1024 * 1024
 class Resource(BaseModel):
     milli_cpu: Decimal = Decimal(0)
     memory: Decimal = Decimal(0)
-    scalar_resources: Dict[str, Decimal] = Field(default_factory=dict)
+    scalar_resources: Dict[str, Decimal] = {}
     max_task_num: Optional[int] = None
 
     @property
