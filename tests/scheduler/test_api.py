@@ -255,6 +255,8 @@ class TestResourceInfo:
             ),
             ({"cpu": "10m"}, {"cpu": "20m", "nvidia.com/gpu": "100Mi"}, True),
             ({"cpu": "10m", "nvidia.com/gpu": "100Mi"}, {"cpu": "20m"}, False),
+            ({"cpu": "100m", "nvidia.com/gpu": ""}, {"cpu": "300m"}, True),
+            ({"cpu": "100m"}, {"cpu": "300m", "nvidia.com/gpu": ""}, True),
         ],
     )
     def test_less_equal_strict(
@@ -281,6 +283,8 @@ class TestResourceInfo:
             ),
             ({"cpu": "30m"}, {"cpu": "20m", "nvidia.com/gpu": "100Mi"}, False),
             ({"cpu": "30m", "nvidia.com/gpu": "100Mi"}, {"cpu": "20m"}, True),
+            ({"cpu": "300m", "nvidia.com/gpu": ""}, {"cpu": "100m"}, True),
+            ({"cpu": "300m"}, {"cpu": "100m", "nvidia.com/gpu": ""}, True),
         ],
     )
     def test_greater_equal_strict(
@@ -302,6 +306,8 @@ class TestResourceInfo:
             ({"cpu": "100m", "nvidia.com/gpu": "8m"}, {"cpu": "100m"}, True),
             ({"cpu": "100m", "nvidia.com/gpu": "11m"}, {"cpu": "100m"}, False),
             ({"cpu": "100m"}, {"cpu": "100m", "nvidia.com/gpu": "11m"}, False),
+            ({"cpu": "100m", "nvidia.com/gpu": ""}, {"cpu": "100m"}, True),
+            ({"cpu": "100m"}, {"cpu": "100m", "nvidia.com/gpu": ""}, True),
         ],
     )
     def test_equal(
@@ -322,6 +328,8 @@ class TestResourceInfo:
             ({"nvidia.com/gpu": "101m"}, {"nvidia.com/gpu": "100m"}, False),
             ({"cpu": "100m", "nvidia.com/gpu": "8m"}, {"cpu": "101m"}, False),
             ({"cpu": "100m", "nvidia.com/gpu": "11m"}, {"cpu": "101m"}, False),
+            ({"cpu": "100m", "nvidia.com/gpu": ""}, {"cpu": "300m"}, True),
+            ({"cpu": "100m"}, {"cpu": "300m", "nvidia.com/gpu": ""}, True),
         ],
     )
     def test_less(
