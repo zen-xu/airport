@@ -1,0 +1,4 @@
+[run]
+omit =
+    airport/kube/api.py
+    airport/api/*
