@@ -32,7 +32,7 @@ class OwnerReference(KubeModel):
     apiVersion: str
     kind: str
     name: str
-    uid: Optional[UUID]
+    uid: UUID
     controller: Optional[bool]
     blockOwnerDeletion: Optional[bool]
 
