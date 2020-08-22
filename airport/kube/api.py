@@ -245,7 +245,7 @@ class ConfigMapEnvSource(LocalObjectReference):
     optional: Optional[bool]
 
 
-class SecretEnvSource(KubeModel):
+class SecretEnvSource(LocalObjectReference):
     optional: Optional[bool]
 
 
