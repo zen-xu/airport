@@ -438,6 +438,7 @@ class Container(KubeModel):
     args: List[str] = []
     workingDir: Optional[str]
     ports: List[ContainerPort] = []
+    envFrom: List[EnvFromSource] = []
     env: List[EnvVar] = []
     resources: Optional[ResourceRequirements]
     volumeMounts: List[VolumeMount] = []
