@@ -96,7 +96,7 @@ class ResourceName(KubeEnum):
     EphemeralStorage = "ephemeral-storage"
 
 
-ResourceList = Dict[ResourceName, Decimal]
+ResourceList = Dict[ResourceName, ResourceQuantity]
 
 
 class ResourceRequirements(KubeModel):
