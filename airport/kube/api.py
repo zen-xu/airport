@@ -60,27 +60,9 @@ class ObjectMeta(KubeModel):
     # managedFields not needed
 
 
-class PersistentVolumeAccessMode(KubeEnum):
-    ReadWriteOnce = "ReadWriteOnce"
-    ReadOnlyMany = "ReadOnlyMany"
-    ReadWriteMany = "ReadWriteMany"
-
-
-class PersistentVolumeMode(KubeEnum):
-    Block = "Block"
-    Filesystem = "Filesystem"
-
-
-class LabelSelectorOperator(KubeEnum):
-    In = "In"
-    NotIn = "NotIn"
-    Exists = "Exists"
-    DoesNotExist = "DoesNotExist"
-
-
 class LabelSelectorRequirement(KubeModel):
     key: str
-    operator: LabelSelectorOperator
+    operator: Literal["In", "NotIn", "Exists", "DoesNotExist"]
     values: List[str] = []
 
 
@@ -89,14 +71,9 @@ class LabelSelector(KubeModel):
     matchExpressions: List[LabelSelectorRequirement] = []
 
 
-class ResourceName(KubeEnum):
-    CPU = "cpu"
-    Memory = "memory"
-    Storage = "storage"
-    EphemeralStorage = "ephemeral-storage"
-
-
-ResourceList = Dict[ResourceName, ResourceQuantity]
+ResourceList = Dict[
+    Literal["cpu", "memory", "storage", "ephemeral-storage"], ResourceQuantity
+]
 
 
 class ResourceRequirements(KubeModel):
@@ -111,31 +88,20 @@ class TypedLocalObjectReference(KubeModel):
 
 
 class PersistentVolumeClaimSpec(KubeModel):
-    accessModes: List[PersistentVolumeAccessMode] = []
+    accessModes: List[Literal["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"]] = []
     selector: Optional[LabelSelector]
     resources: Optional[ResourceRequirements]
     volumeName: Optional[str]
     storageClassName: Optional[str]
-    volumeMode: Optional[PersistentVolumeMode]
+    volumeMode: Optional[Literal["Block", "Filesystem"]]
     dataSource: Optional[TypedLocalObjectReference]
 
 
-class PersistentVolumeClaimPhase(KubeEnum):
-    Pending = "Pending"
-    Bound = "Bound"
-    Lost = "Lost"
-
-
-class PersistentVolumeClaimCondition(KubeEnum):
-    Resizing = "Resizing"
-    FileSystemResizePending = "FileSystemResizePending"
-
-
 class PersistentVolumeClaimStatus(KubeModel):
-    phase: Optional[PersistentVolumeClaimPhase]
-    accessModes: List[PersistentVolumeAccessMode] = []
+    phase: Optional[Literal["Pending", "Bound", "Lost"]]
+    accessModes: List[Literal["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"]] = []
     capacity: ResourceList = {}
-    conditions: List[PersistentVolumeClaimCondition] = []
+    conditions: List[Literal["Resizing", "FileSystemResizePending"]] = []
 
 
 class PersistentVolumeClaim(TypeMeta, ObjectMeta):
@@ -149,30 +115,22 @@ class KeyToPath(KubeModel):
     mode: Optional[int] = Field(..., ge=0, le=0o777)
 
 
-class HostPathType(KubeEnum):
-    Unset = ""
-    DirectoryOrCreate = "DirectoryOrCreate"
-    Directory = "Directory"
-    FileOrCreate = "FileOrCreate"
-    File = "File"
-    Socket = "Socket"
-    CharDevice = "CharDevice"
-    BlockDevice = "BlockDevice"
-
-
 class HostPathVolumeSource(KubeModel):
     path: str
-    type: HostPathType = HostPathType.Unset
-
-
-class StorageMedium(KubeEnum):
-    Default = ""
-    Memory = "Memory"
-    HugePages = "HugePages"
+    type: Literal[
+        "",
+        "DirectoryOrCreate",
+        "Directory",
+        "FileOrCreate",
+        "File",
+        "Socket",
+        "CharDevice",
+        "BlockDevice",
+    ] = ""
 
 
 class EmptyDirVolumeSource(KubeModel):
-    medium: Optional[StorageMedium]
+    medium: Optional[Literal["", "Memory", "HugePages"]]
     sizeLimit: Optional[Decimal]
 
 
@@ -378,17 +336,6 @@ class Lifecycle(KubeModel):
     preStop: Optional[Handler]
 
 
-class TerminationMessagePolicy(KubeEnum):
-    File = "File"
-    FallbackToLogsOnError = "FallbackToLogsOnError"
-
-
-class PullPolicy(KubeEnum):
-    Always = "Always"
-    Never = "Never"
-    IfNotPresent = "IfNotPresent"
-
-
 class EphemeralContainerCommon(KubeModel):
     name: str
     image: str
@@ -406,8 +353,8 @@ class EphemeralContainerCommon(KubeModel):
     startupProbe: Optional[Probe]
     lifecycle: Optional[Lifecycle]
     terminationMessagePath: Optional[str]
-    terminationMessagePolicy: TerminationMessagePolicy = TerminationMessagePolicy.File
-    imagePullPolicy: PullPolicy = PullPolicy.Always
+    terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] = "File"
+    imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] = "Always"
     securityContext: Optional[SecurityContext]
     stdin: bool = False
     stdinOnce: bool = False
@@ -416,19 +363,6 @@ class EphemeralContainerCommon(KubeModel):
 
 class EphemeralContainer(EphemeralContainerCommon):
     targetContainerName: Optional[str]
-
-
-class RestartPolicy(KubeEnum):
-    Always = "Always"
-    OnFailure = "OnFailure"
-    Never = "Never"
-
-
-class DNSPolicy(KubeEnum):
-    ClusterFirstWithHostNet = "ClusterFirstWithHostNet"
-    ClusterFirst = "ClusterFirst"
-    Default = "Default"
-    DnsNone = "None"
 
 
 class Container(KubeModel):
@@ -448,8 +382,8 @@ class Container(KubeModel):
     startupProbe: Optional[Probe]
     lifecycle: Optional[Lifecycle]
     terminationMessagePath: str = "/dev/termination-log"
-    terminationMessagePolicy: TerminationMessagePolicy = TerminationMessagePolicy.File
-    imagePullPolicy: PullPolicy = PullPolicy.Always
+    terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] = "File"
+    imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] = "Always"
     securityContext: Optional[SecurityContext]
     stdin: bool = False
     stdinOnce: bool = False
@@ -472,18 +406,9 @@ class PodSecurityContext(KubeModel):
     sysctls: List[Sysctl]
 
 
-class NodeSelectorOperator(KubeEnum):
-    In = "In"
-    NotIn = "NotIn"
-    Exists = "Exists"
-    DoesNotExist = "DoesNotExist"
-    Gt = "Gt"
-    Lt = "Lt"
-
-
 class NodeSelectorRequirement(KubeModel):
     key: str
-    operator: NodeSelectorOperator
+    operator: Literal["In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"]
     values: List[str] = []
 
 
@@ -573,10 +498,12 @@ class PodSpec(KubeModel):
     initContainers: List[Container] = []
     containers: List[Container] = []
     ephemeralContainers: List[EphemeralContainer] = []
-    restartPolicy: Optional[RestartPolicy]
+    restartPolicy: Optional[Literal["Always", "OnFailure", "Never"]]
     terminationGracePeriodSeconds: int = 30
     activeDeadlineSeconds: Optional[int]
-    dnsPolicy: DNSPolicy
+    dnsPolicy: Optional[
+        Literal["ClusterFirstWithHostNet", "ClusterFirst", "Default", "None"]
+    ]
     serviceAccountName: Optional[str]
     serviceAccount: Optional[str]
     automountServiceAccountToken: Optional[bool]
