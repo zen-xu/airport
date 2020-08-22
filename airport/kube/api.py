@@ -456,14 +456,152 @@ class Container(KubeModel):
     tty: bool = False
 
 
+class Sysctl(KubeModel):
+    name: str
+    value: str
+
+
+class PodSecurityContext(KubeModel):
+    seLinuxOptions: Optional[SELinuxOptions]
+    windowsOptions: Optional[WindowsSecurityContextOptions]
+    runAsUser: Optional[int]
+    runAsGroup: Optional[int]
+    runAsRoot: Optional[bool]
+    supplementalGroups: List[int] = []
+    fsGroup: Optional[int]
+    sysctls: List[Sysctl]
+
+
+class NodeSelectorOperator(KubeEnum):
+    In = "In"
+    NotIn = "NotIn"
+    Exists = "Exists"
+    DoesNotExist = "DoesNotExist"
+    Gt = "Gt"
+    Lt = "Lt"
+
+
+class NodeSelectorRequirement(KubeModel):
+    key: str
+    operator: NodeSelectorOperator
+    values: List[str] = []
+
+
+class NodeSelectorTerm(KubeModel):
+    matchExpressions: List[NodeSelectorRequirement] = []
+    matchFields: List[NodeSelectorRequirement] = []
+
+
+class NodeSelector(KubeModel):
+    nodeSelectorTerms: List[NodeSelectorTerm] = []
+
+
+class PreferredSchedulingTerm(KubeModel):
+    weight: int = Field(..., ge=1, le=100)
+    preference: NodeSelectorTerm
+
+
+class NodeAffinity(KubeModel):
+    requiredDuringSchedulingIgnoredDuringExecution: Optional[NodeSelector]
+    preferredDuringSchedulingIgnoredDuringExecution: List[PreferredSchedulingTerm] = []
+
+
+class PodAffinityTerm(KubeModel):
+    labelSelector: Optional[LabelSelector]
+    namespaces: List[str] = []
+    topologyKey: str
+
+
+class WeightedPodAffinityTerm(KubeModel):
+    weight: int = Field(..., ge=1, le=100)
+    podAffinityTerm: PodAffinityTerm
+
+
+class PodAffinity(KubeModel):
+    requiredDuringSchedulingIgnoredDuringExecution: Optional[PodAffinityTerm]
+    preferredDuringSchedulingIgnoredDuringExecution: Optional[WeightedPodAffinityTerm]
+
+
+class PodAntiAffinity(KubeModel):
+    requiredDuringSchedulingIgnoredDuringExecution: Optional[PodAffinityTerm]
+    preferredDuringSchedulingIgnoredDuringExecution: Optional[WeightedPodAffinityTerm]
+
+
+class Affinity(KubeModel):
+    nodeAffinity: Optional[NodeAffinity]
+    podAffinity: Optional[PodAffinity]
+    podAntiAffinity: Optional[PodAntiAffinity]
+
+
+class Toleration(KubeModel):
+    key: Optional[str]
+    operator: Optional[Literal["Exists", "Equal"]]
+    value: Optional[str]
+    effect: Optional[Literal["NoSchedule", "PreferNoSchedule", "NoExecute"]]
+    tolerationSeconds: Optional[int]
+
+
+class HostAlias(KubeModel):
+    ip: str
+    hostnames: List[str] = []
+
+
+class PodDNSConfigOption(KubeModel):
+    name: str
+    value: Optional[str]
+
+
+class PodDNSConfig(KubeModel):
+    nameservers: List[str] = []
+    searches: List[str] = []
+    options: List[PodDNSConfigOption] = []
+
+
+class PodReadinessGate(KubeModel):
+    conditionType: Literal["ContainersReady", "Initialized", "Ready", "PodScheduled"]
+
+
+class TopologySpreadConstraint(KubeModel):
+    maxSkew: int
+    topologyKey: str
+    whenUnsatisfiable: Literal["DoNotSchedule", "ScheduleAnyway"]
+    labelSelector: Optional[LabelSelector]
+
+
 class PodSpec(KubeModel):
     volumes: List[Volume] = []
     initContainers: List[Container] = []
+    containers: List[Container] = []
     ephemeralContainers: List[EphemeralContainer] = []
     restartPolicy: Optional[RestartPolicy]
     terminationGracePeriodSeconds: int = 30
     activeDeadlineSeconds: Optional[int]
     dnsPolicy: DNSPolicy
+    serviceAccountName: Optional[str]
+    serviceAccount: Optional[str]
+    automountServiceAccountToken: Optional[bool]
+    nodeName: Optional[str]
+    hostNetwork: Optional[bool]
+    hostPID: Optional[bool]
+    hostIPC: Optional[bool]
+    shareProcessNamespace: Optional[bool]
+    securityContext: Optional[PodSecurityContext]
+    imagePullSecrets: List[LocalObjectReference] = []
+    hostname: Optional[str]
+    subdomain: Optional[str]
+    affinity: Optional[Affinity]
+    schedulerName: Optional[str]
+    tolerations: List[Toleration] = []
+    hostAliases: List[HostAlias] = []
+    priorityClassName: Optional[str]
+    priority: Optional[int]
+    dnsConfig: Optional[PodDNSConfig]
+    readinessGates: List[PodReadinessGate] = []
+    runtimeClassName: Optional[str]
+    enableServiceLinks: Optional[bool]
+    preemptionPolicy: Optional[Literal["PreemptLowerPriority", "Never"]]
+    overhead: Optional[ResourceList]
+    topologySpreadConstraints: List[TopologySpreadConstraint]
 
 
 class PodTemplateSpec(ObjectMeta):
