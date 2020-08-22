@@ -400,7 +400,7 @@ class EphemeralContainerCommon(KubeModel):
     env: List[EnvVar] = []
     resources: ResourceRequirements
     volumeMounts: List[VolumeMount] = []
-    volumeDevice: List[VolumeDevice] = []
+    volumeDevices: List[VolumeDevice] = []
     livenessProbe: Optional[Probe]
     readinessProbe: Optional[Probe]
     startupProbe: Optional[Probe]
