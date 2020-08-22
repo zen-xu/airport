@@ -34,7 +34,7 @@ class OwnerReference(KubeModel):
     name: str
     uid: UUID
     controller: Optional[bool]
-    blockOwnerDeletion: Optional[bool]
+    blockOwnerDeletion: bool = False
 
 
 class LocalObjectReference(KubeModel):
