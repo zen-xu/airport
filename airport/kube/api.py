@@ -162,7 +162,7 @@ class HostPathType(KubeEnum):
 
 class HostPathVolumeSource(KubeModel):
     path: str
-    type: Optional[HostPathType]
+    type: HostPathType = HostPathType.Unset
 
 
 class StorageMedium(KubeEnum):
