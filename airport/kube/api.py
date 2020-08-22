@@ -114,6 +114,7 @@ class PersistentVolumeClaimSpec(KubeModel):
     accessModes: List[PersistentVolumeAccessMode] = []
     selector: Optional[LabelSelector]
     resources: Optional[ResourceRequirements]
+    volumeName: Optional[str]
     storageClassName: Optional[str]
     volumeMode: Optional[PersistentVolumeMode]
     dataSource: Optional[TypedLocalObjectReference]
