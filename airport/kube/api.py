@@ -662,3 +662,9 @@ class PodSpec(KubeModel):
 
 class PodTemplateSpec(ObjectMeta):
     spec: Optional[PodSpec]
+
+
+class ConditionStatus(KubeEnum):
+    ConditionTrue = "True"
+    ConditionFalse = "False"
+    ConditionUnknown = "Unknown"
