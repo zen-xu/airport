@@ -65,12 +65,14 @@ class PodGroupStatus(KubeModel):
     failed: Optional[int]
 
 
-class PodGroup(TypeMeta, ObjectMeta):
+class PodGroup(TypeMeta):
+    metadata: ObjectMeta
     spec: Optional[PodGroupSpec]
     status: Optional[PodGroupStatus]
 
 
-class PodGroupList(TypeMeta, ListMeta):
+class PodGroupList(TypeMeta):
+    metadata: ListMeta
     items: List[PodGroup] = []
 
 
@@ -95,10 +97,12 @@ class QueueStatus(KubeModel):
     inqueue: int
 
 
-class Queue(TypeMeta, ObjectMeta):
+class Queue(TypeMeta):
+    metadata: ObjectMeta
     spec: Optional[QueueSpec]
     status: Optional[QueueStatus]
 
 
-class QueueList(TypeMeta, ListMeta):
+class QueueList(TypeMeta):
+    metadata: ListMeta
     items: List[Queue]

@@ -2,6 +2,7 @@ from typing import List
 from typing import Optional
 
 from airport.kube.api import KubeEnum
+from airport.kube.api import ListMeta
 from airport.kube.api import ObjectMeta
 from airport.kube.api import OwnerReference
 from airport.kube.api import TypeMeta
@@ -31,12 +32,14 @@ class Event(KubeEnum):
     CommandIssued = "CommandIssued"
 
 
-class Command(TypeMeta, ObjectMeta):
+class Command(TypeMeta):
+    metadata: ObjectMeta
     action: str
     target: OwnerReference
     reason: Optional[str]
     message: Optional[str]
 
 
-class CommandList(TypeMeta, ObjectMeta):
+class CommandList(TypeMeta):
+    metadata: ListMeta
     items: List[Command]

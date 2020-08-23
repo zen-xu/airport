@@ -103,10 +103,12 @@ class JobStatus(KubeModel):
     controlledResources: Dict[str, str]
 
 
-class Job(TypeMeta, ObjectMeta):
+class Job(TypeMeta):
+    metadata: ObjectMeta
     spec: JobSpec
     status: JobStatus
 
 
-class JobList(TypeMeta, ListMeta):
+class JobList(TypeMeta):
+    metadata: ListMeta
     items: List[Job]

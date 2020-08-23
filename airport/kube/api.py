@@ -144,7 +144,8 @@ class PersistentVolumeClaimStatus(KubeModel):
     conditions: List[PersistentVolumeClaimCondition] = []
 
 
-class PersistentVolumeClaim(TypeMeta, ObjectMeta):
+class PersistentVolumeClaim(TypeMeta):
+    metadata: ObjectMeta
     spec: Optional[PersistentVolumeClaimSpec]
     status: Optional[PersistentVolumeClaimStatus]
 
@@ -660,7 +661,8 @@ class PodSpec(KubeModel):
     topologySpreadConstraints: List[TopologySpreadConstraint]
 
 
-class PodTemplateSpec(ObjectMeta):
+class PodTemplateSpec(KubeModel):
+    metadata: ObjectMeta
     spec: Optional[PodSpec]
 
 
