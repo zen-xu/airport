@@ -37,6 +37,13 @@ class OwnerReference(KubeModel):
     blockOwnerDeletion: bool = False
 
 
+class ListMeta(KubeModel):
+    selfLink: Optional[str]
+    resourceVersion: Optional[str]
+    continue_value: str = Field(..., alias="continue")
+    remainingItemCount: Optional[int]
+
+
 class LocalObjectReference(KubeModel):
     name: Optional[str]
 
