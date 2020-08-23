@@ -7,6 +7,7 @@ from pydantic.fields import Field
 
 from airport.kube.api import KubeEnum
 from airport.kube.api import KubeModel
+from airport.kube.api import ListMeta
 from airport.kube.api import ObjectMeta
 from airport.kube.api import PersistentVolumeClaimSpec
 from airport.kube.api import PodTemplateSpec
@@ -105,3 +106,7 @@ class JobStatus(KubeModel):
 class Job(TypeMeta, ObjectMeta):
     spec: JobSpec
     status: JobStatus
+
+
+class JobList(TypeMeta, ListMeta):
+    items: List[Job]
