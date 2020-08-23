@@ -9,6 +9,7 @@ from airport.kube.api import KubeEnum
 from airport.kube.api import KubeModel
 from airport.kube.api import ObjectMeta
 from airport.kube.api import PersistentVolumeClaimSpec
+from airport.kube.api import PodTemplateSpec
 from airport.kube.api import TypeMeta
 
 from .bus import Action
@@ -30,18 +31,19 @@ class VolumeSpec(KubeModel):
     volumeClaim: Optional[PersistentVolumeClaimSpec]
 
 
-class TaskSpec(KubeModel):
-    name: Optional[str]
-    replicas: Optional[int]
-    # template: Optional[PodTemplateSpec]
-
-
 class LifecyclePolicy(KubeModel):
     action: Optional[Action]
     event: Optional[Event]
     events: List[Event]
     exitCode: Optional[int]
     timeout: Optional[str]
+
+
+class TaskSpec(KubeModel):
+    name: Optional[str]
+    replicas: Optional[int]
+    template: Optional[PodTemplateSpec]
+    policies: List[LifecyclePolicy] = []
 
 
 class JobSpec(KubeModel):
