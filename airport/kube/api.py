@@ -3,7 +3,6 @@ from decimal import Decimal
 from enum import Enum
 from typing import Dict
 from typing import List
-from typing import Literal
 from typing import Optional
 from typing import Union
 from uuid import UUID
@@ -67,9 +66,16 @@ class ObjectMeta(KubeModel):
     # managedFields not needed
 
 
+class LabelSelectorOperator(KubeEnum):
+    In = "In"
+    NotIn = "NotIn"
+    Exists = "Exists"
+    DoesNotExist = "DoesNotExist"
+
+
 class LabelSelectorRequirement(KubeModel):
     key: str
-    operator: Literal["In", "NotIn", "Exists", "DoesNotExist"]
+    operator: LabelSelectorOperator
     values: List[str] = []
 
 
@@ -78,9 +84,14 @@ class LabelSelector(KubeModel):
     matchExpressions: List[LabelSelectorRequirement] = []
 
 
-ResourceList = Dict[
-    Literal["cpu", "memory", "storage", "ephemeral-storage"], ResourceQuantity
-]
+class ResourceName(KubeEnum):
+    CPU = "cpu"
+    Memory = "memory"
+    Storage = "storage"
+    EphemeralStorage = "ephemeral-storage"
+
+
+ResourceList = Dict[ResourceName, ResourceQuantity]
 
 
 class ResourceRequirements(KubeModel):
@@ -94,21 +105,43 @@ class TypedLocalObjectReference(KubeModel):
     apiGroup: Optional[str]
 
 
+class PersistentVolumeAccessMode(KubeEnum):
+    ReadWriteOnce = "ReadWriteOnce"
+    ReadOnlyMany = "ReadOnlyMany"
+    ReadWriteMany = "ReadWriteMany"
+
+
+class PersistentVolumeMode(KubeEnum):
+    Block = "Block"
+    Filesystem = "Filesystem"
+
+
 class PersistentVolumeClaimSpec(KubeModel):
-    accessModes: List[Literal["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"]] = []
+    accessModes: List[PersistentVolumeAccessMode] = []
     selector: Optional[LabelSelector]
     resources: Optional[ResourceRequirements]
     volumeName: Optional[str]
     storageClassName: Optional[str]
-    volumeMode: Optional[Literal["Block", "Filesystem"]]
+    volumeMode: Optional[PersistentVolumeMode]
     dataSource: Optional[TypedLocalObjectReference]
 
 
+class PersistentVolumeClaimPhase(KubeEnum):
+    Pending = "Pending"
+    Bound = "Bound"
+    Lost = "Lost"
+
+
+class PersistentVolumeClaimCondition(KubeEnum):
+    Resizing = "Resizing"
+    FileSystemResizePending = "FileSystemResizePending"
+
+
 class PersistentVolumeClaimStatus(KubeModel):
-    phase: Optional[Literal["Pending", "Bound", "Lost"]]
-    accessModes: List[Literal["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"]] = []
+    phase: Optional[PersistentVolumeClaimPhase]
+    accessModes: List[PersistentVolumeAccessMode] = []
     capacity: ResourceList = {}
-    conditions: List[Literal["Resizing", "FileSystemResizePending"]] = []
+    conditions: List[PersistentVolumeClaimCondition] = []
 
 
 class PersistentVolumeClaim(TypeMeta, ObjectMeta):
@@ -122,23 +155,31 @@ class KeyToPath(KubeModel):
     mode: Optional[int] = Field(..., ge=0, le=0o777)
 
 
+class HostPathType(KubeEnum):
+    Unset = ""
+    DirectoryOrCreate = "DirectoryOrCreate"
+    Directory = "Directory"
+    FileOrCreate = "FileOrCreate"
+    File = "File"
+    Socket = "Socket"
+    CharDevice = "CharDevice"
+    BlockDevice = "BlockDevice"
+
+
 class HostPathVolumeSource(KubeModel):
     path: str
-    type: Literal[
-        "",
-        "DirectoryOrCreate",
-        "Directory",
-        "FileOrCreate",
-        "File",
-        "Socket",
-        "CharDevice",
-        "BlockDevice",
-    ] = ""
+    type: HostPathType = HostPathType.Unset
+
+
+class StorageMedium(KubeEnum):
+    Default = ""
+    Memory = "Memory"
+    HugePages = "HugePages"
 
 
 class EmptyDirVolumeSource(KubeModel):
-    medium: Optional[Literal["", "Memory", "HugePages"]]
-    sizeLimit: Optional[Decimal]
+    medium: StorageMedium = StorageMedium.Default
+    sizeLimit: Optional[ResourceQuantity]
 
 
 class SecretVolumeSource(KubeModel):
@@ -198,11 +239,17 @@ class Volume(VolumeSource):
     name: str
 
 
+class Protocol(KubeEnum):
+    TCP = "TCP"
+    UDP = "UDP"
+    SCTP = "SCTP"
+
+
 class ContainerPort(KubeModel):
     name: Optional[str]
     hostPort: Optional[int] = Field(..., gt=0, lt=65536)
     containerPort: Optional[int] = Field(..., gt=0, lt=65536)
-    protocol: Literal["TCP", "UDP", "SCTP"] = "TCP"
+    protocol: Protocol = Protocol.TCP
     hostIP: Optional[str]
 
 
@@ -254,12 +301,18 @@ class EnvVar(KubeModel):
     valueFrom: Optional[EnvVarSource]
 
 
+class MountPropagationMode(KubeEnum):
+    NoneMode = "None"
+    HostToContainer = "HostToContainer"
+    Bidirectional = "Bidirectional"
+
+
 class VolumeMount(KubeModel):
     name: str
     mountPath: str
     subPath: str = ""
     readOnly: bool = False
-    mountPropagation: Literal["None", "HostToContainer", "Bidirectional"] = "None"
+    mountPropagation: MountPropagationMode = MountPropagationMode.NoneMode
     subPathExpr: str = ""
 
 
@@ -277,11 +330,16 @@ class HttpHeader(KubeModel):
     value: str
 
 
+class URIScheme(KubeEnum):
+    HTTP = "HTTP"
+    HTTPS = "HTTPS"
+
+
 class HTTPGetAction(KubeModel):
     path: Optional[str]
     port: Union[int, str]
     host: Optional[str]
-    httpSchema: Literal["HTTP", "HTTPS"] = Field("HTTP", alias="schema")
+    uriSchema: URIScheme = Field(URIScheme.HTTP, alias="schema")
     httpHeaders: List[HttpHeader] = []
 
 
@@ -325,6 +383,11 @@ class WindowsSecurityContextOptions(KubeModel):
     runAsUserName: Optional[str]
 
 
+class ProcMountType(KubeEnum):
+    Default = "Default"
+    Unmasked = "Unmasked"
+
+
 class SecurityContext(KubeModel):
     capabilities: Optional[Capabilities]
     privileged: bool = False
@@ -335,12 +398,23 @@ class SecurityContext(KubeModel):
     runAsNonRoot: Optional[bool]
     readOnlyRootFilesystem: bool = False
     allowPrivilegeEscalation: Optional[bool]
-    procMount: Literal["Default", "Unmasked"] = "Default"
+    procMount: ProcMountType = ProcMountType.Default
 
 
 class Lifecycle(KubeModel):
     postStart: Optional[Handler]
     preStop: Optional[Handler]
+
+
+class TerminationMessagePolicy(KubeEnum):
+    File = "File"
+    FallbackToLogsOnError = "FallbackToLogsOnError"
+
+
+class PullPolicy(KubeEnum):
+    Always = "Always"
+    Never = "Never"
+    IfNotPresent = "IfNotPresent"
 
 
 class EphemeralContainerCommon(KubeModel):
@@ -360,8 +434,8 @@ class EphemeralContainerCommon(KubeModel):
     startupProbe: Optional[Probe]
     lifecycle: Optional[Lifecycle]
     terminationMessagePath: Optional[str]
-    terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] = "File"
-    imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] = "Always"
+    terminationMessagePolicy: TerminationMessagePolicy = TerminationMessagePolicy.File
+    imagePullPolicy: PullPolicy = PullPolicy.Always
     securityContext: Optional[SecurityContext]
     stdin: bool = False
     stdinOnce: bool = False
@@ -389,8 +463,8 @@ class Container(KubeModel):
     startupProbe: Optional[Probe]
     lifecycle: Optional[Lifecycle]
     terminationMessagePath: str = "/dev/termination-log"
-    terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] = "File"
-    imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] = "Always"
+    terminationMessagePolicy: TerminationMessagePolicy = TerminationMessagePolicy.File
+    imagePullPolicy: PullPolicy = PullPolicy.Always
     securityContext: Optional[SecurityContext]
     stdin: bool = False
     stdinOnce: bool = False
@@ -413,9 +487,18 @@ class PodSecurityContext(KubeModel):
     sysctls: List[Sysctl]
 
 
+class NodeSelectorOperator(KubeEnum):
+    In = "In"
+    NotIn = "NotIN"
+    Exists = "Exists"
+    DoesNotExist = "DoesNotExist"
+    Gt = "Gt"
+    Lt = "Lt"
+
+
 class NodeSelectorRequirement(KubeModel):
     key: str
-    operator: Literal["In", "NotIn", "Exists", "DoesNotExist", "Gt", "Lt"]
+    operator: NodeSelectorOperator
     values: List[str] = []
 
 
@@ -465,11 +548,22 @@ class Affinity(KubeModel):
     podAntiAffinity: Optional[PodAntiAffinity]
 
 
+class TolerationOperator(KubeEnum):
+    Exists = "Exists"
+    Equal = "Equal"
+
+
+class TaintEffect(KubeEnum):
+    NoSchedule = "NoSchedule"
+    PreferNoSchedule = "PreferNoSchedule"
+    NoExecute = "NoExecute"
+
+
 class Toleration(KubeModel):
     key: Optional[str]
-    operator: Optional[Literal["Exists", "Equal"]]
+    operator: Optional[TolerationOperator]
     value: Optional[str]
-    effect: Optional[Literal["NoSchedule", "PreferNoSchedule", "NoExecute"]]
+    effect: Optional[TaintEffect]
     tolerationSeconds: Optional[int]
 
 
@@ -489,15 +583,45 @@ class PodDNSConfig(KubeModel):
     options: List[PodDNSConfigOption] = []
 
 
+class PodConditionType(KubeEnum):
+    ContainersReady = "ContainersReady"
+    Initialized = "Initialized"
+    Ready = "Ready"
+    PodScheduled = "PodScheduled"
+
+
 class PodReadinessGate(KubeModel):
-    conditionType: Literal["ContainersReady", "Initialized", "Ready", "PodScheduled"]
+    conditionType: PodConditionType
+
+
+class UnsatisfiableConstraintAction(KubeEnum):
+    DoNotSchedule = "DoNotSchedule"
+    ScheduleAnyway = "ScheduleAnyway"
 
 
 class TopologySpreadConstraint(KubeModel):
     maxSkew: int
     topologyKey: str
-    whenUnsatisfiable: Literal["DoNotSchedule", "ScheduleAnyway"]
+    whenUnsatisfiable: UnsatisfiableConstraintAction
     labelSelector: Optional[LabelSelector]
+
+
+class RestartPolicy(KubeEnum):
+    Always = "Always"
+    OnFailure = "OnFailure"
+    Never = "Never"
+
+
+class DNSPolicy(KubeEnum):
+    ClusterFirstWithHostNet = "ClusterFirstWithHostNet"
+    ClusterFirst = "ClusterFirst"
+    Default = "Default"
+    NonePolicy = "None"
+
+
+class PreemptionPolicy(KubeEnum):
+    PreemptLowerPriority = "PreemptLowerPriority"
+    Never = "Never"
 
 
 class PodSpec(KubeModel):
@@ -505,12 +629,10 @@ class PodSpec(KubeModel):
     initContainers: List[Container] = []
     containers: List[Container] = []
     ephemeralContainers: List[EphemeralContainer] = []
-    restartPolicy: Optional[Literal["Always", "OnFailure", "Never"]]
+    restartPolicy: Optional[RestartPolicy]
     terminationGracePeriodSeconds: int = 30
     activeDeadlineSeconds: Optional[int]
-    dnsPolicy: Optional[
-        Literal["ClusterFirstWithHostNet", "ClusterFirst", "Default", "None"]
-    ]
+    dnsPolicy: Optional[DNSPolicy]
     serviceAccountName: Optional[str]
     serviceAccount: Optional[str]
     automountServiceAccountToken: Optional[bool]
@@ -533,7 +655,7 @@ class PodSpec(KubeModel):
     readinessGates: List[PodReadinessGate] = []
     runtimeClassName: Optional[str]
     enableServiceLinks: Optional[bool]
-    preemptionPolicy: Optional[Literal["PreemptLowerPriority", "Never"]]
+    preemptionPolicy: Optional[PreemptionPolicy]
     overhead: Optional[ResourceList]
     topologySpreadConstraints: List[TopologySpreadConstraint]
 
