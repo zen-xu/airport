@@ -20,7 +20,40 @@ class KubeEnum(str, Enum):
     ...
 
 
-class ResourceQuantity(Decimal):
+class _ResourceQuantityMeta(type):
+    def __new__(mcs, name, bases, attrs):
+        def wrap(op):  # noqa
+            method_name = f"__{op}__"
+
+            def method(self, *args, **kwargs):
+                result = getattr(Decimal, method_name)(self, *args, **kwargs)
+                return self.__class__(result)
+
+            method.__name__ = method_name
+            return method
+
+        for op in [
+            "add",
+            "sub",
+            "mul",
+            "truediv",
+            "floordiv",
+            "mod",
+            "pow",
+            "neg",
+            "abs",
+        ]:
+            attrs[f"__{op}__"] = wrap(op)
+
+        def __divmod__(self, v):
+            quotient, remainder = Decimal.__divmod__(self, v)
+            return self.__class__(quotient), self.__class__(remainder)
+
+        attrs["__divmod__"] = __divmod__
+        return super().__new__(mcs, name, bases, attrs)
+
+
+class ResourceQuantity(Decimal, metaclass=_ResourceQuantityMeta):
     def __new__(cls, quantity: Union[str, float, Decimal]):
         quantity = parse_quantity(quantity)
         return super().__new__(cls, quantity)  # noqa
