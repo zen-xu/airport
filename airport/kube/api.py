@@ -7,6 +7,7 @@ from typing import Optional
 from typing import Union
 from uuid import UUID
 
+from kubernetes.utils.quantity import parse_quantity
 from pydantic import BaseModel
 from pydantic.fields import Field
 
@@ -19,7 +20,22 @@ class KubeEnum(str, Enum):
     ...
 
 
-ResourceQuantity = Decimal
+class ResourceQuantity(Decimal):
+    def __new__(cls, quantity: Union[str, float, Decimal]):
+        quantity = parse_quantity(quantity)
+        return super().__new__(cls, quantity)  # noqa
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}('{self}')"
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: Union[str, float]):
+        quantity = parse_quantity(v)
+        return cls(quantity)  # noqa
 
 
 class TypeMeta(KubeModel):
