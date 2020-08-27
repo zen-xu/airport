@@ -6,7 +6,6 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from uuid import UUID
 
 from kubernetes.utils.quantity import parse_quantity
 from pydantic import BaseModel
@@ -79,7 +78,7 @@ class OwnerReference(KubeModel):
     apiVersion: str
     kind: str
     name: str
-    uid: UUID
+    uid: str
     controller: Optional[bool]
     blockOwnerDeletion: bool = False
 
@@ -100,7 +99,7 @@ class ObjectMeta(KubeModel):
     generateName: Optional[str]
     namespace: Optional[str]
     selfLink: Optional[str]
-    uid: Optional[UUID]
+    uid: Optional[str]
     resourceVersion: Optional[str]
     generation: Optional[int]
     creationTimestamp: Optional[datetime]
