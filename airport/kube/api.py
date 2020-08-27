@@ -144,8 +144,8 @@ ResourceList = Dict[ResourceName, ResourceQuantity]
 
 
 class ResourceRequirements(KubeModel):
-    limits: Optional[ResourceList] = {}
-    requests: Optional[ResourceList] = {}
+    limits: ResourceList = {}
+    requests: ResourceList = {}
 
 
 class TypedLocalObjectReference(KubeModel):
