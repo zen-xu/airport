@@ -640,6 +640,21 @@ class PodConditionType(KubeEnum):
     PodScheduled = "PodScheduled"
 
 
+class ConditionStatus(KubeEnum):
+    ConditionTrue = "True"
+    ConditionFalse = "False"
+    ConditionUnknown = "Unknown"
+
+
+class PodCondition(KubeModel):
+    type: PodConditionType
+    status: ConditionStatus
+    lastProbeTime: Optional[datetime]
+    lastTransitionTime: Optional[datetime]
+    reason: Optional[str]
+    message: Optional[str]
+
+
 class PodReadinessGate(KubeModel):
     conditionType: PodConditionType
 
@@ -715,7 +730,83 @@ class PodTemplateSpec(KubeModel):
     spec: Optional[PodSpec]
 
 
-class ConditionStatus(KubeEnum):
-    ConditionTrue = "True"
-    ConditionFalse = "False"
-    ConditionUnknown = "Unknown"
+class PodPhase(KubeEnum):
+    Pending = "Pending"
+    Running = "Running"
+    Succeeded = "Succeeded"
+    Failed = "Failed"
+    Unknown = "Unknown"
+
+
+class PodIP(KubeModel):
+    ip: str
+
+
+class ContainerStateWaiting(KubeModel):
+    reason: Optional[str]
+    message: Optional[str]
+
+
+class ContainerStateRunning(KubeModel):
+    startedAt: Optional[datetime]
+
+
+class ContainerStateTerminated(KubeModel):
+    exitCode: int
+    signal: Optional[int]
+    reason: Optional[str]
+    message: Optional[str]
+    startedAt: Optional[datetime]
+    finishedAt: Optional[datetime]
+    containerID: Optional[str]
+
+
+class ContainerState(KubeModel):
+    waiting: Optional[ContainerStateWaiting]
+    running: Optional[ContainerStateRunning]
+    terminated: Optional[ContainerStateTerminated]
+
+
+class ContainerStatus(KubeModel):
+    name: str
+    state: Optional[ContainerState]
+    lastState: Optional[ContainerState]
+    ready: bool
+    restartCount: int
+    image: str
+    imageID: str
+    containerID: Optional[str]
+    started: Optional[bool]
+
+
+class PodQOSClass(KubeEnum):
+    Guaranteed = "Guaranteed"
+    Burstable = "Burstable"
+    BestEffort = "BestEffort"
+
+
+class PodStatus(KubeModel):
+    phase: Optional[PodPhase]
+    conditions: List[PodCondition] = []
+    message: Optional[str]
+    reason: Optional[str]
+    nominatedNodeName: Optional[str]
+    hostIP: Optional[str]
+    podIP: Optional[str]
+    podIPs: List[PodIP] = []
+    startTime: Optional[datetime]
+    initContainerStatuses: List[ContainerStatus] = []
+    containerStatuses: List[ContainerStatus] = []
+    qosClass: Optional[PodQOSClass]
+    ephemeralContainerStatuses: List[ContainerStatus] = []
+
+
+class Pod(TypeMeta):
+    metadata: Optional[ObjectMeta]
+    spec: Optional[PodSpec]
+    status: Optional[PodStatus]
+
+
+class PodList(TypeMeta):
+    metadata: Optional[ListMeta]
+    items: List[Pod] = []
