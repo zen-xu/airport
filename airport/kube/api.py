@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 from uuid import UUID
 
@@ -20,41 +21,8 @@ class KubeEnum(str, Enum):
     ...
 
 
-class _ResourceQuantityMeta(type):
-    def __new__(mcs, name, bases, attrs):
-        def wrap(op):  # noqa
-            method_name = f"__{op}__"
-
-            def method(self, *args, **kwargs):
-                result = getattr(Decimal, method_name)(self, *args, **kwargs)
-                return self.__class__(result)
-
-            method.__name__ = method_name
-            return method
-
-        for op in [
-            "add",
-            "sub",
-            "mul",
-            "truediv",
-            "floordiv",
-            "mod",
-            "pow",
-            "neg",
-            "abs",
-        ]:
-            attrs[f"__{op}__"] = wrap(op)
-
-        def __divmod__(self, v):
-            quotient, remainder = Decimal.__divmod__(self, v)
-            return self.__class__(quotient), self.__class__(remainder)
-
-        attrs["__divmod__"] = __divmod__
-        return super().__new__(mcs, name, bases, attrs)
-
-
-class ResourceQuantity(Decimal, metaclass=_ResourceQuantityMeta):
-    def __new__(cls, quantity: Union[str, float, Decimal]):
+class ResourceQuantity(Decimal):
+    def __new__(cls, quantity: Union[str, float, Decimal]) -> "ResourceQuantity":
         quantity = parse_quantity(quantity)
         return super().__new__(cls, quantity)  # noqa
 
@@ -69,6 +37,37 @@ class ResourceQuantity(Decimal, metaclass=_ResourceQuantityMeta):
     def validate(cls, v: Union[str, float]):
         quantity = parse_quantity(v)
         return cls(quantity)  # noqa
+
+    def __add__(self, value) -> "ResourceQuantity":
+        return self.__class__(super().__add__(value))  # noqa
+
+    def __sub__(self, value) -> "ResourceQuantity":
+        return self.__class__(super().__sub__(value))  # noqa
+
+    def __mul__(self, value) -> "ResourceQuantity":
+        return self.__class__(super().__mul__(value))  # noqa
+
+    def __truediv__(self, value) -> "ResourceQuantity":
+        return self.__class__(super().__truediv__(value))  # noqa
+
+    def __floordiv__(self, value) -> "ResourceQuantity":
+        return self.__class__(super().__floordiv__(value))  # noqa
+
+    def __mod__(self, value) -> "ResourceQuantity":
+        return self.__class__(super().__mod__(value))  # noqa
+
+    def __pow__(self, value, mod=None, /) -> "ResourceQuantity":
+        return self.__class__(super().__pow__(value, mod))  # noqa
+
+    def __neg__(self) -> "ResourceQuantity":
+        return self.__class__(super().__neg__())  # noqa
+
+    def __abs__(self) -> "ResourceQuantity":
+        return self.__class__(super().__abs__())  # noqa
+
+    def __divmod__(self, value) -> Tuple["ResourceQuantity", "ResourceQuantity"]:
+        quotient, remainder = super().__divmod__(value)
+        return self.__class__(quotient), self.__class__(remainder)  # noqa
 
 
 class TypeMeta(KubeModel):
