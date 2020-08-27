@@ -18,7 +18,7 @@ parametrize = pytest.mark.parametrize
 
 class TestResourceInfo:
     def test_resource_names(self):
-        resource = Resource.from_resource_list(
+        resource = Resource.new(
             {"cpu": "10m", "memory": "10Mi", "nvidia.com/gpu": "1Gi"}
         )
         assert resource.resource_names == ["cpu", "memory", "nvidia.com/gpu"]
@@ -46,8 +46,8 @@ class TestResourceInfo:
             ),
         ],
     )
-    def test_from_resource_list(self, resource_list: dict, resource: Resource):
-        assert Resource.from_resource_list(resource_list) == resource
+    def test_new_resource(self, resource_list: dict, resource: Resource):
+        assert Resource.new(resource_list) == resource
 
     @parametrize(
         "resource_name,quantity",
@@ -90,7 +90,7 @@ class TestResourceInfo:
         ],
     )
     def test_is_empty(self, resource_list: dict, is_empty: bool):
-        resource = Resource.from_resource_list(resource_list)
+        resource = Resource.new(resource_list)
         assert resource.is_empty() == is_empty
 
     @parametrize(
@@ -112,7 +112,7 @@ class TestResourceInfo:
     def test_is_zero(
         self, resource_list: dict, resource_name: str, is_zero: Result[bool, ValueError]
     ):
-        resource = Resource.from_resource_list(resource_list)
+        resource = Resource.new(resource_list)
 
         resource.is_zero(resource_name).alt(
             lambda exception: exception.args
@@ -136,9 +136,9 @@ class TestResourceInfo:
     def test_set_max_resource(
         self, left_resource_list: dict, right_resource_list: dict, excepted: dict
     ):
-        left_resource = Resource.from_resource_list(left_resource_list)
-        right_resource = Resource.from_resource_list(right_resource_list)
-        excepted_resource = Resource.from_resource_list(excepted)
+        left_resource = Resource.new(left_resource_list)
+        right_resource = Resource.new(right_resource_list)
+        excepted_resource = Resource.new(excepted)
         assert excepted_resource == left_resource.set_max_resource(right_resource)
 
     @parametrize(
@@ -264,8 +264,8 @@ class TestResourceInfo:
     def test_less_equal_strict(
         self, left_resource_list: dict, right_resource_list: dict, excepted: bool
     ):
-        left_resource = Resource.from_resource_list(left_resource_list)
-        right_resource = Resource.from_resource_list(right_resource_list)
+        left_resource = Resource.new(left_resource_list)
+        right_resource = Resource.new(right_resource_list)
         assert left_resource.less_equal_strict(right_resource) == excepted
 
     @parametrize(
@@ -292,8 +292,8 @@ class TestResourceInfo:
     def test_greater_equal_strict(
         self, left_resource_list: dict, right_resource_list: dict, excepted: bool
     ):
-        left_resource = Resource.from_resource_list(left_resource_list)
-        right_resource = Resource.from_resource_list(right_resource_list)
+        left_resource = Resource.new(left_resource_list)
+        right_resource = Resource.new(right_resource_list)
         assert left_resource.greater_equal_strict(right_resource) == excepted
 
     @parametrize(
@@ -315,8 +315,8 @@ class TestResourceInfo:
     def test_equal(
         self, left_resource_list: dict, right_resource_list: dict, excepted: bool
     ):
-        left_resource = Resource.from_resource_list(left_resource_list)
-        right_resource = Resource.from_resource_list(right_resource_list)
+        left_resource = Resource.new(left_resource_list)
+        right_resource = Resource.new(right_resource_list)
         assert (left_resource == right_resource) == excepted
 
     @parametrize(
@@ -337,8 +337,8 @@ class TestResourceInfo:
     def test_less(
         self, left_resource_list: dict, right_resource_list: dict, excepted: bool
     ):
-        left_resource = Resource.from_resource_list(left_resource_list)
-        right_resource = Resource.from_resource_list(right_resource_list)
+        left_resource = Resource.new(left_resource_list)
+        right_resource = Resource.new(right_resource_list)
         assert (left_resource < right_resource) == excepted
 
     @parametrize(
@@ -361,9 +361,9 @@ class TestResourceInfo:
     def test_add(
         self, left_resource_list: dict, right_resource_list: dict, excepted: dict
     ):
-        left_resource = Resource.from_resource_list(left_resource_list)
-        right_resource = Resource.from_resource_list(right_resource_list)
-        excpeted_resource = Resource.from_resource_list(excepted)
+        left_resource = Resource.new(left_resource_list)
+        right_resource = Resource.new(right_resource_list)
+        excpeted_resource = Resource.new(excepted)
         assert left_resource + right_resource == excpeted_resource
 
     @parametrize(
@@ -392,9 +392,9 @@ class TestResourceInfo:
     def test_sub(
         self, left_resource_list: dict, right_resource_list: dict, excepted: dict
     ):
-        left_resource = Resource.from_resource_list(left_resource_list)
-        right_resource = Resource.from_resource_list(right_resource_list)
-        excpeted_resource = Resource.from_resource_list(excepted)
+        left_resource = Resource.new(left_resource_list)
+        right_resource = Resource.new(right_resource_list)
+        excpeted_resource = Resource.new(excepted)
         assert left_resource - right_resource == excpeted_resource
 
     @parametrize(
@@ -408,6 +408,6 @@ class TestResourceInfo:
         ],
     )
     def test_multi(self, resource_list: dict, ratio: int, excepted: dict):
-        resource = Resource.from_resource_list(resource_list)
-        excepted_resource = Resource.from_resource_list(excepted)
+        resource = Resource.new(resource_list)
+        excepted_resource = Resource.new(excepted)
         assert resource * ratio == excepted_resource

@@ -31,7 +31,7 @@ class Resource(BaseModel):
         return ["cpu", "memory", *self.scalar_resources.keys()]
 
     @classmethod
-    def from_resource_list(
+    def new(
         cls: Type["Resource"], resource_list: Union[ResourceList, Dict[str, str]]
     ) -> "Resource":
         resource = cls()
