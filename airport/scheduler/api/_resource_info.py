@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -6,13 +5,14 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 
-from kubernetes.utils.quantity import parse_quantity
 from pydantic import BaseModel
 from returns.result import Failure
 from returns.result import Result
 from returns.result import Success
 
 from airport.kube import helper
+from airport.kube.api import ResourceList
+from airport.kube.api import ResourceQuantity
 
 
 MinMilliCpu: int = 10
@@ -21,9 +21,9 @@ MinMemory: int = 10 * 1024 * 1024
 
 
 class Resource(BaseModel):
-    milli_cpu: Decimal = Decimal(0)
-    memory: Decimal = Decimal(0)
-    scalar_resources: Dict[str, Decimal] = {}
+    milli_cpu: ResourceQuantity = ResourceQuantity(0)
+    memory: ResourceQuantity = ResourceQuantity(0)
+    scalar_resources: Dict[str, ResourceQuantity] = {}
     max_task_num: Optional[int] = None
 
     @property
@@ -32,7 +32,7 @@ class Resource(BaseModel):
 
     @classmethod
     def from_resource_list(
-        cls: Type["Resource"], resource_list: Dict[str, str]
+        cls: Type["Resource"], resource_list: Union[ResourceList, Dict[str, str]]
     ) -> "Resource":
         resource = cls()
 
@@ -40,18 +40,19 @@ class Resource(BaseModel):
             if not value:
                 continue
 
+            value = ResourceQuantity(value)
             if resource_name == "cpu":
-                resource.milli_cpu += parse_quantity(value) * 1000
+                resource.milli_cpu += value * 1000
             elif resource_name == "memory":
-                resource.memory += parse_quantity(value)
+                resource.memory += value
             elif resource_name == "pods":
-                resource.max_task_num = int(parse_quantity(value))
+                resource.max_task_num = int(value)
             elif helper.is_scalar_resource_name(resource_name):
-                resource.scalar_resources[resource_name] = parse_quantity(value) * 1000
+                resource.scalar_resources[resource_name] = value * 1000
 
         return resource
 
-    def get(self, resource_name: str) -> Result[Decimal, ValueError]:
+    def get(self, resource_name: str) -> Result[ResourceQuantity, ValueError]:
         if resource_name == "cpu":
             return Success(self.milli_cpu)
         elif resource_name == "memory":
@@ -62,8 +63,10 @@ class Resource(BaseModel):
             except KeyError:
                 return Failure(ValueError(f"Unknown resource {resource_name}"))
 
-    def set_scalar_resource(self, resource_name: str, quantity: Union[float, Decimal]):
-        self.scalar_resources[resource_name] = Decimal(quantity)
+    def set_scalar_resource(
+        self, resource_name: str, quantity: Union[float, ResourceQuantity]
+    ):
+        self.scalar_resources[resource_name] = ResourceQuantity(quantity)
 
     def is_empty(self) -> bool:
         """
@@ -115,7 +118,7 @@ class Resource(BaseModel):
 
         for resource_name, other_quant in other.scalar_resources.items():
             if other_quant > 0:
-                self.scalar_resources.setdefault(resource_name, Decimal(0))
+                self.scalar_resources.setdefault(resource_name, ResourceQuantity(0))
                 self.scalar_resources[resource_name] -= (
                     other_quant + MinMilliScalarResources
                 )
@@ -145,7 +148,7 @@ class Resource(BaseModel):
                 handle_value = increase_value
             else:
                 handle_value = decrease_value
-            handle_value.scalar_resources.setdefault(resource_name, Decimal(0))
+            handle_value.scalar_resources.setdefault(resource_name, ResourceQuantity(0))
             handle_value.scalar_resources[resource_name] += abs(quant - other_quant)
 
         return increase_value, decrease_value
@@ -224,7 +227,7 @@ class Resource(BaseModel):
         resource.memory += other.memory
 
         for resource_name, quant in other.scalar_resources.items():
-            resource.scalar_resources.setdefault(resource_name, Decimal(0))
+            resource.scalar_resources.setdefault(resource_name, ResourceQuantity(0))
             resource.scalar_resources[resource_name] += quant
 
         return resource
@@ -239,7 +242,7 @@ class Resource(BaseModel):
         resource.memory -= other.memory
 
         for resource_name, quant in other.scalar_resources.items():
-            resource.scalar_resources.setdefault(resource_name, Decimal(0))
+            resource.scalar_resources.setdefault(resource_name, ResourceQuantity(0))
             resource.scalar_resources[resource_name] -= quant
 
         return resource
@@ -247,10 +250,11 @@ class Resource(BaseModel):
     def __mul__(self, ratio: int) -> "Resource":
         resource: Resource = self.copy(deep=True)
 
+        resource.milli_cpu += ResourceQuantity(1)
         resource.milli_cpu *= ratio
         resource.memory *= ratio
         for resource_name, quant in resource.scalar_resources.items():
-            resource.scalar_resources.setdefault(resource_name, Decimal(0))
+            resource.scalar_resources.setdefault(resource_name, ResourceQuantity(0))
             resource.scalar_resources[resource_name] *= ratio
 
         return resource

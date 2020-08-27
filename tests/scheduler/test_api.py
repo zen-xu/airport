@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Tuple
 
 import pytest
@@ -7,6 +6,7 @@ from returns.result import Failure
 from returns.result import Result
 from returns.result import Success
 
+from airport.kube.api import ResourceQuantity
 from airport.scheduler.api import Resource
 from airport.scheduler.api._resource_info import MinMemory
 from airport.scheduler.api._resource_info import MinMilliCpu
@@ -29,17 +29,17 @@ class TestResourceInfo:
             (
                 {"cpu": "2000m", "memory": "1G", "pods": 20, "nvidia.com/gpu": "1G"},
                 Resource(
-                    milli_cpu=Decimal(2000),
-                    memory=Decimal(1e9),
+                    milli_cpu=ResourceQuantity(2000),
+                    memory=ResourceQuantity(1e9),
                     max_task_num=20,
-                    scalar_resources={"nvidia.com/gpu": Decimal(1e12)},
+                    scalar_resources={"nvidia.com/gpu": ResourceQuantity(1e12)},
                 ),
             ),
             (
                 {"cpu": "2000m", "memory": "1G", "pods": 20, "nvidia.com/gpu": ""},
                 Resource(
-                    milli_cpu=Decimal(2000),
-                    memory=Decimal(1e9),
+                    milli_cpu=ResourceQuantity(2000),
+                    memory=ResourceQuantity(1e9),
                     max_task_num=20,
                     scalar_resources={},
                 ),
@@ -58,11 +58,13 @@ class TestResourceInfo:
             ("nvidia.com/cpu", Failure(ValueError("Unknown resource nvidia.com/cpu"))),
         ],
     )
-    def test_get(self, resource_name: str, quantity: Result[Decimal, ValueError]):
+    def test_get(
+        self, resource_name: str, quantity: Result[ResourceQuantity, ValueError]
+    ):
         resource = Resource(
-            milli_cpu=Decimal(100),
-            memory=Decimal(100),
-            scalar_resources={"nvidia.com/gpu": Decimal(100)},
+            milli_cpu=ResourceQuantity(100),
+            memory=ResourceQuantity(100),
+            scalar_resources={"nvidia.com/gpu": ResourceQuantity(100)},
         )
         result = resource.get(resource_name)
         assert result.alt(lambda exception: exception.args) == quantity.alt(
@@ -73,7 +75,7 @@ class TestResourceInfo:
         empty_resource = Resource()
         empty_resource.set_scalar_resource("nvidia.com/gpu", 100)
         assert empty_resource == Resource(
-            scalar_resources={"nvidia.com/gpu": Decimal(100)}
+            scalar_resources={"nvidia.com/gpu": ResourceQuantity(100)}
         )
 
     @parametrize(
@@ -144,26 +146,26 @@ class TestResourceInfo:
         [
             (
                 Resource(
-                    milli_cpu=Decimal(1000),
-                    memory=Decimal(20 * 1024 * 1024),
-                    scalar_resources={"nvidia.com/gpu": Decimal(200)},
+                    milli_cpu=ResourceQuantity(1000),
+                    memory=ResourceQuantity(20 * 1024 * 1024),
+                    scalar_resources={"nvidia.com/gpu": ResourceQuantity(200)},
                 ),
                 Resource(
-                    milli_cpu=Decimal(100),
-                    memory=Decimal(1024),
+                    milli_cpu=ResourceQuantity(100),
+                    memory=ResourceQuantity(1024),
                     scalar_resources={
-                        "nvidia.com/gpu": Decimal(100),
-                        "nvidia.com/gpu-tesla-p100-16GB": Decimal(200),
+                        "nvidia.com/gpu": ResourceQuantity(100),
+                        "nvidia.com/gpu-tesla-p100-16GB": ResourceQuantity(200),
                     },
                 ),
                 Resource(
-                    milli_cpu=Decimal(1000 - (100 + MinMilliCpu)),
-                    memory=Decimal(20 * 1024 * 1024 - (1024 + MinMemory)),
+                    milli_cpu=ResourceQuantity(1000 - (100 + MinMilliCpu)),
+                    memory=ResourceQuantity(20 * 1024 * 1024 - (1024 + MinMemory)),
                     scalar_resources={
-                        "nvidia.com/gpu": Decimal(
+                        "nvidia.com/gpu": ResourceQuantity(
                             200 - (100 + MinMilliScalarResources)
                         ),
-                        "nvidia.com/gpu-tesla-p100-16GB": Decimal(
+                        "nvidia.com/gpu-tesla-p100-16GB": ResourceQuantity(
                             0 - (200 + MinMilliScalarResources)
                         ),
                     },
@@ -181,50 +183,50 @@ class TestResourceInfo:
         [
             (
                 Resource(
-                    milli_cpu=Decimal(1000),
-                    memory=Decimal(200),
-                    scalar_resources={"nvidia.com/gpu": Decimal(200)},
+                    milli_cpu=ResourceQuantity(1000),
+                    memory=ResourceQuantity(200),
+                    scalar_resources={"nvidia.com/gpu": ResourceQuantity(200)},
                 ),
                 Resource(
-                    milli_cpu=Decimal(100),
-                    memory=Decimal(1000),
+                    milli_cpu=ResourceQuantity(100),
+                    memory=ResourceQuantity(1000),
                     scalar_resources={
-                        "nvidia.com/gpu": Decimal(100),
-                        "nvidia.com/gpu-tesla-p100-16GB": Decimal(200),
+                        "nvidia.com/gpu": ResourceQuantity(100),
+                        "nvidia.com/gpu-tesla-p100-16GB": ResourceQuantity(200),
                     },
                 ),
                 (
                     Resource(
-                        milli_cpu=Decimal(900),
-                        scalar_resources={"nvidia.com/gpu": Decimal(100)},
+                        milli_cpu=ResourceQuantity(900),
+                        scalar_resources={"nvidia.com/gpu": ResourceQuantity(100)},
                     ),
-                    Resource(memory=Decimal(800)),
+                    Resource(memory=ResourceQuantity(800)),
                 ),
             ),
             (
                 Resource(
-                    milli_cpu=Decimal(100),
-                    memory=Decimal(1000),
+                    milli_cpu=ResourceQuantity(100),
+                    memory=ResourceQuantity(1000),
                     scalar_resources={
-                        "nvidia.com/gpu": Decimal(100),
-                        "nvidia.com/gpu-tesla-p100-16GB": Decimal(200),
+                        "nvidia.com/gpu": ResourceQuantity(100),
+                        "nvidia.com/gpu-tesla-p100-16GB": ResourceQuantity(200),
                     },
                 ),
                 Resource(
-                    milli_cpu=Decimal(1000),
-                    memory=Decimal(200),
-                    scalar_resources={"nvidia.com/gpu": Decimal(200)},
+                    milli_cpu=ResourceQuantity(1000),
+                    memory=ResourceQuantity(200),
+                    scalar_resources={"nvidia.com/gpu": ResourceQuantity(200)},
                 ),
                 (
                     Resource(
-                        memory=Decimal(800),
+                        memory=ResourceQuantity(800),
                         scalar_resources={
-                            "nvidia.com/gpu-tesla-p100-16GB": Decimal(200)
+                            "nvidia.com/gpu-tesla-p100-16GB": ResourceQuantity(200)
                         },
                     ),
                     Resource(
-                        milli_cpu=Decimal(900),
-                        scalar_resources={"nvidia.com/gpu": Decimal(100)},
+                        milli_cpu=ResourceQuantity(900),
+                        scalar_resources={"nvidia.com/gpu": ResourceQuantity(100)},
                     ),
                 ),
             ),
