@@ -238,7 +238,7 @@ class SecretVolumeSource(KubeModel):
 
 
 class ConfigMapVolumeSource(LocalObjectReference):
-    items: List[KeyToPath]
+    items: List[KeyToPath] = []
     defaultMode: Optional[int] = 0o0644
     optional: Optional[bool]
 
@@ -532,7 +532,7 @@ class PodSecurityContext(KubeModel):
     runAsRoot: Optional[bool]
     supplementalGroups: List[int] = []
     fsGroup: Optional[int]
-    sysctls: List[Sysctl]
+    sysctls: List[Sysctl] = []
 
 
 class NodeSelectorOperator(KubeEnum):
@@ -720,7 +720,7 @@ class PodSpec(KubeModel):
     enableServiceLinks: Optional[bool]
     preemptionPolicy: Optional[PreemptionPolicy]
     overhead: Optional[ResourceList]
-    topologySpreadConstraints: List[TopologySpreadConstraint]
+    topologySpreadConstraints: List[TopologySpreadConstraint] = []
 
 
 class PodTemplateSpec(KubeModel):
