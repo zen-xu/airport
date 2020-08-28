@@ -59,12 +59,11 @@ class BaseModel(_BaseModel):
                 field.default = Nothing
                 field.required = False
                 field.allow_none = True
-                field.pre_validators = field.pre_validators or []
 
         json_encoders = {_Some: lambda v: v.unwrap(), _Nothing: lambda _: None}
 
     @validator("*", pre=True)
-    def _convert_none_to_nothing(cls, v):  # noqa
-        if v is None:
+    def _convert_none_to_nothing(cls, value, field):  # noqa
+        if field.type_ == Maybe and value is None:
             return Nothing
-        return v
+        return value
