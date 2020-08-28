@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Tuple
 
 import pytest
@@ -6,8 +7,12 @@ from returns.result import Failure
 from returns.result import Result
 from returns.result import Success
 
+from airport.api.scheduling import KubeGroupNameAnnotationKey
+from airport.kube.api import Pod
 from airport.kube.api import ResourceQuantity
 from airport.scheduler.api import Resource
+from airport.scheduler.api import _job_info as job_info
+from airport.scheduler.api._enums import TaskStatus
 from airport.scheduler.api._resource_info import MinMemory
 from airport.scheduler.api._resource_info import MinMilliCpu
 from airport.scheduler.api._resource_info import MinMilliScalarResources
@@ -411,3 +416,116 @@ class TestResourceInfo:
         resource = Resource.new(resource_list)
         excepted_resource = Resource.new(excepted)
         assert resource * ratio == excepted_resource
+
+
+class TestTaskInfo:
+    @pytest.fixture
+    def pod(self):
+        return Pod.parse_obj(
+            {
+                "metadata": {
+                    "name": "demo",
+                    "namespace": "default",
+                    "uid": "05196752-598e-4d10-bf50-a9226d14c514",
+                    "annotations": {KubeGroupNameAnnotationKey: "demo-job"},
+                },
+                "spec": {
+                    "containers": [
+                        {
+                            "name": "worker1",
+                            "resources": {
+                                "requests": {"cpu": "10m", "memory": "100Mi"}
+                            },
+                        },
+                        {
+                            "name": "worker2",
+                            "resources": {
+                                "requests": {"cpu": "20m", "memory": "200Mi"}
+                            },
+                        },
+                    ],
+                    "initContainers": [
+                        {
+                            "name": "init",
+                            "resources": {"requests": {"cpu": "1", "memory": "200Mi"}},
+                        },
+                    ],
+                },
+            }
+        )
+
+    @pytest.fixture
+    def empty_pod(self):
+        return Pod()
+
+    def test_get_job_id(self, pod: Pod):
+        assert job_info.get_job_id(pod) == "default/demo-job"
+
+    def test_get_job_id_from_empty_pod(self, empty_pod: Pod):
+        assert job_info.get_job_id(empty_pod) == ""
+
+    def test_get_job_id_no_annotation(self, pod: Pod):
+        pod.metadata.annotations = {}
+        assert job_info.get_job_id(pod) == ""
+
+        pod.metadata.annotations = {KubeGroupNameAnnotationKey: ""}
+        assert job_info.get_job_id(pod) == ""
+
+    def test_get_job_id_no_namespace(self, pod: Pod):
+        pod.metadata.namespace = ""
+        assert job_info.get_job_id(pod) == "/demo-job"
+
+    def test_get_pod_resource_without_init_container(self, pod: Pod, empty_pod: Pod):
+        assert job_info.get_pod_resource_without_init_container(pod) == Resource.new(
+            {"cpu": "30m", "memory": "300Mi"}
+        )
+
+        assert job_info.get_pod_resource_without_init_container(empty_pod) == Resource()
+
+    def test_get_pod_resource_request(self, pod: Pod, empty_pod: Pod):
+        assert job_info.get_pod_resource_request(pod) == Resource.new(
+            {"cpu": "1", "memory": "300Mi"}
+        )
+
+        assert job_info.get_pod_resource_request(empty_pod) == Resource()
+
+    @parametrize(
+        "pod,task_status",
+        [
+            ({"status": {"phase": "Running"}}, TaskStatus.Running,),
+            (
+                {
+                    "metadata": {"deletionTimestamp": datetime.now()},
+                    "status": {"phase": "Pending"},
+                },
+                TaskStatus.Releasing,
+            ),
+            ({"status": {"phase": "Pending"}}, TaskStatus.Running,),
+            ({"status": {"phase": "Unknown"}}, TaskStatus.Unknown,),
+            ({"status": {"phase": "Succeeded"}}, TaskStatus.Succeeded,),
+            ({"status": {"phase": "Failed"}}, TaskStatus.Failed,),
+        ],
+    )
+    def test_get_task_status(
+        self, pod: dict, task_status: TaskStatus,
+    ):
+        pod = Pod.parse_obj(pod)
+        assert job_info.get_task_status(pod) == task_status
+
+    def test_new_task_info(self, pod: Pod):
+        task_info = job_info.TaskInfo.new(pod)
+        assert task_info == job_info.TaskInfo.parse_obj(
+            {
+                "uid": "05196752-598e-4d10-bf50-a9226d14c514",
+                "job": "default/demo-job",
+                "name": "demo",
+                "namespace": "default",
+                "resource_requests": Resource.new({"cpu": "30m", "memory": "300Mi"}),
+                "init_resource_requests": Resource.new({"cpu": "1", "memory": "300Mi"}),
+                "node_name": "",
+                "status": TaskStatus.Unknown,
+                "priority": 1,
+                "volume_ready": False,
+                "pod": pod,
+            }
+        )
