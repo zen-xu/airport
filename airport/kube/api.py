@@ -12,6 +12,9 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 
 
+DefaultDatetime = datetime.fromtimestamp(0)
+
+
 class KubeModel(BaseModel):
     ...
 
@@ -21,7 +24,7 @@ class KubeEnum(str, Enum):
 
 
 class ResourceQuantity(Decimal):
-    def __new__(cls, quantity: Union[str, float, Decimal]) -> "ResourceQuantity":
+    def __new__(cls, quantity: Union[str, float, Decimal] = 0) -> "ResourceQuantity":
         quantity = parse_quantity(quantity)
         return super().__new__(cls, quantity)  # noqa
 
@@ -70,46 +73,46 @@ class ResourceQuantity(Decimal):
 
 
 class TypeMeta(KubeModel):
-    kind: Optional[str]
-    apiVersion: Optional[str]
+    kind: str = ""
+    apiVersion: str = ""
 
 
 class OwnerReference(KubeModel):
-    apiVersion: str
-    kind: str
-    name: str
-    uid: str
-    controller: Optional[bool]
+    apiVersion: str = ""
+    kind: str = ""
+    name: str = ""
+    uid: str = ""
+    controller: bool = False
     blockOwnerDeletion: bool = False
 
 
 class ListMeta(KubeModel):
-    selfLink: Optional[str]
-    resourceVersion: Optional[str]
-    continue_value: str = Field(..., alias="continue")
+    selfLink: str = ""
+    resourceVersion: str = ""
+    continue_value: str = Field("", alias="continue")
     remainingItemCount: Optional[int]
 
 
 class LocalObjectReference(KubeModel):
-    name: Optional[str]
+    name: str = ""
 
 
 class ObjectMeta(KubeModel):
-    name: Optional[str]
-    generateName: Optional[str]
-    namespace: Optional[str]
-    selfLink: Optional[str]
-    uid: Optional[str]
-    resourceVersion: Optional[str]
-    generation: Optional[int]
-    creationTimestamp: Optional[datetime]
+    name: str = ""
+    generateName: str = ""
+    namespace: str = ""
+    selfLink: str = ""
+    uid: str = ""
+    resourceVersion: str = ""
+    generation: str = ""
+    creationTimestamp: datetime = DefaultDatetime
     deletionTimestamp: Optional[datetime]
     deletionGracePeriodSeconds: Optional[int]
     labels: Dict[str, str] = {}
     annotations: Dict[str, str] = {}
     ownerReferences: List[OwnerReference] = []
     finalizers: List[str] = []
-    clusterName: Optional[str]
+    clusterName: str = ""
     # managedFields not needed
 
 
@@ -121,8 +124,8 @@ class LabelSelectorOperator(KubeEnum):
 
 
 class LabelSelectorRequirement(KubeModel):
-    key: str
-    operator: LabelSelectorOperator
+    key: str = ""
+    operator: Optional[LabelSelectorOperator]
     values: List[str] = []
 
 
@@ -147,8 +150,8 @@ class ResourceRequirements(KubeModel):
 
 
 class TypedLocalObjectReference(KubeModel):
-    kind: str
-    name: str
+    kind: str = ""
+    name: str = ""
     apiGroup: Optional[str]
 
 
@@ -166,8 +169,8 @@ class PersistentVolumeMode(KubeEnum):
 class PersistentVolumeClaimSpec(KubeModel):
     accessModes: List[PersistentVolumeAccessMode] = []
     selector: Optional[LabelSelector]
-    resources: Optional[ResourceRequirements]
-    volumeName: Optional[str]
+    resources: ResourceRequirements = ResourceRequirements()
+    volumeName: str = ""
     storageClassName: Optional[str]
     volumeMode: Optional[PersistentVolumeMode]
     dataSource: Optional[TypedLocalObjectReference]
@@ -191,16 +194,10 @@ class PersistentVolumeClaimStatus(KubeModel):
     conditions: List[PersistentVolumeClaimCondition] = []
 
 
-class PersistentVolumeClaim(TypeMeta):
-    metadata: ObjectMeta
-    spec: Optional[PersistentVolumeClaimSpec]
-    status: Optional[PersistentVolumeClaimStatus]
-
-
 class KeyToPath(KubeModel):
-    key: str
-    path: str
-    mode: Optional[int] = Field(..., ge=0, le=0o777)
+    key: str = ""
+    path: str = ""
+    mode: Optional[int] = Field(None, ge=0, le=0o777)
 
 
 class HostPathType(KubeEnum):
@@ -215,7 +212,7 @@ class HostPathType(KubeEnum):
 
 
 class HostPathVolumeSource(KubeModel):
-    path: str
+    path: str = ""
     type: HostPathType = HostPathType.Unset
 
 
@@ -231,20 +228,25 @@ class EmptyDirVolumeSource(KubeModel):
 
 
 class SecretVolumeSource(KubeModel):
-    secretName: Optional[str]
+    secretName: str = ""
     items: List[KeyToPath] = []
-    defaultMode: Optional[int] = 0o0644
+    defaultMode: int = 0o0644
     optional: Optional[bool]
+
+
+class PersistentVolumeClaimVolumeSource(KubeModel):
+    claimName: str = ""
+    readOnly: bool = False
 
 
 class ConfigMapVolumeSource(LocalObjectReference):
     items: List[KeyToPath] = []
-    defaultMode: Optional[int] = 0o0644
+    defaultMode: int = 0o0644
     optional: Optional[bool]
 
 
 class CSIVolumeSource(KubeModel):
-    driver: str
+    driver: str = ""
     readOnly: bool = False
     fsType: Optional[str]
     volumeAttributes: Dict[str, str] = {}
@@ -255,7 +257,7 @@ class VolumeSource(KubeModel):
     hostPath: Optional[HostPathVolumeSource]
     emptyDIr: Optional[EmptyDirVolumeSource]
     secret: Optional[SecretVolumeSource]
-    persistentVolumeClaim: Optional[PersistentVolumeClaim]
+    persistentVolumeClaim: Optional[PersistentVolumeClaimVolumeSource]
     configMap: Optional[ConfigMapVolumeSource]
     csi: Optional[CSIVolumeSource]
     # Unsupported
@@ -284,7 +286,7 @@ class VolumeSource(KubeModel):
 
 
 class Volume(VolumeSource):
-    name: str
+    name: str = ""
 
 
 class Protocol(KubeEnum):
@@ -294,11 +296,11 @@ class Protocol(KubeEnum):
 
 
 class ContainerPort(KubeModel):
-    name: Optional[str]
-    hostPort: Optional[int] = Field(..., gt=0, lt=65536)
-    containerPort: Optional[int] = Field(..., gt=0, lt=65536)
+    name: str = ""
+    hostPort: Optional[int] = Field(None, gt=0, lt=65536)
+    containerPort: Optional[int] = Field(None, gt=0, lt=65536)
     protocol: Protocol = Protocol.TCP
-    hostIP: Optional[str]
+    hostIP: str = ""
 
 
 class ConfigMapEnvSource(LocalObjectReference):
@@ -310,29 +312,29 @@ class SecretEnvSource(LocalObjectReference):
 
 
 class EnvFromSource(KubeModel):
-    prefix: str
+    prefix: str = ""
     configMapRef: Optional[ConfigMapEnvSource]
     secretRef: Optional[SecretEnvSource]
 
 
 class ObjectFieldSelector(KubeModel):
-    apiVersion: Optional[str]
-    fieldPath: str
+    apiVersion: str = ""
+    fieldPath: str = ""
 
 
 class ResourceFieldSelector(KubeModel):
-    containerName: Optional[str]
-    resource: str
-    divisor: ResourceQuantity
+    containerName: str = ""
+    resource: str = ""
+    divisor: ResourceQuantity = ResourceQuantity()
 
 
 class ConfigMapKeySelector(LocalObjectReference):
-    key: str
+    key: str = ""
     optional: Optional[bool]
 
 
 class SecretKeySelector(LocalObjectReference):
-    key: str
+    key: str = ""
     optional: Optional[bool]
 
 
@@ -344,7 +346,7 @@ class EnvVarSource(KubeModel):
 
 
 class EnvVar(KubeModel):
-    name: str
+    name: str = ""
     value: str = ""
     valueFrom: Optional[EnvVarSource]
 
@@ -356,17 +358,17 @@ class MountPropagationMode(KubeEnum):
 
 
 class VolumeMount(KubeModel):
-    name: str
-    mountPath: str
-    subPath: str = ""
+    name: str = ""
     readOnly: bool = False
+    mountPath: str = ""
+    subPath: str = ""
     mountPropagation: MountPropagationMode = MountPropagationMode.NoneMode
     subPathExpr: str = ""
 
 
 class VolumeDevice(KubeModel):
-    name: str
-    devicePath: str
+    name: str = ""
+    devicePath: str = ""
 
 
 class ExecAction(KubeModel):
@@ -374,8 +376,8 @@ class ExecAction(KubeModel):
 
 
 class HttpHeader(KubeModel):
-    name: str
-    value: str
+    name: str = ""
+    value: str = ""
 
 
 class URIScheme(KubeEnum):
@@ -384,16 +386,16 @@ class URIScheme(KubeEnum):
 
 
 class HTTPGetAction(KubeModel):
-    path: Optional[str]
-    port: Union[int, str]
-    host: Optional[str]
+    path: str = ""
+    port: Union[int, str] = ""
+    host: str = ""
     uriSchema: URIScheme = Field(URIScheme.HTTP, alias="schema")
     httpHeaders: List[HttpHeader] = []
 
 
 class TCPSocketAction(KubeModel):
-    port: Union[str, int]
-    host: Optional[str]
+    port: Union[str, int] = ""
+    host: str = ""
 
 
 class Handler(KubeModel):
@@ -403,7 +405,7 @@ class Handler(KubeModel):
 
 
 class Probe(Handler):
-    initialDelaySeconds: Optional[int]
+    initialDelaySeconds: int = 0
     timeoutSeconds: int = 1
     periodSeconds: int = 10
     successThreshold: int = 1
@@ -419,10 +421,10 @@ class Capabilities(KubeModel):
 
 
 class SELinuxOptions(KubeModel):
-    user: Optional[str]
-    role: Optional[str]
-    type: Optional[str]
-    level: Optional[str]
+    user: str = ""
+    role: str = ""
+    type: str = ""
+    level: str = ""
 
 
 class WindowsSecurityContextOptions(KubeModel):
@@ -466,22 +468,22 @@ class PullPolicy(KubeEnum):
 
 
 class EphemeralContainerCommon(KubeModel):
-    name: str
-    image: str
+    name: str = ""
+    image: str = ""
     command: List[str] = []
     args: List[str] = []
-    workingDir: Optional[str]
+    workingDir: str = ""
     ports: List[ContainerPort] = []
     envFrom: List[EnvFromSource] = []
     env: List[EnvVar] = []
-    resources: ResourceRequirements
+    resources: ResourceRequirements = ResourceRequirements()
     volumeMounts: List[VolumeMount] = []
     volumeDevices: List[VolumeDevice] = []
     livenessProbe: Optional[Probe]
     readinessProbe: Optional[Probe]
     startupProbe: Optional[Probe]
     lifecycle: Optional[Lifecycle]
-    terminationMessagePath: Optional[str]
+    terminationMessagePath: str = ""
     terminationMessagePolicy: TerminationMessagePolicy = TerminationMessagePolicy.File
     imagePullPolicy: PullPolicy = PullPolicy.Always
     securityContext: Optional[SecurityContext]
@@ -491,19 +493,19 @@ class EphemeralContainerCommon(KubeModel):
 
 
 class EphemeralContainer(EphemeralContainerCommon):
-    targetContainerName: Optional[str]
+    targetContainerName: str = ""
 
 
 class Container(KubeModel):
-    name: str
-    image: Optional[str]
+    name: str = ""
+    image: str = ""
     command: List[str] = []
     args: List[str] = []
-    workingDir: Optional[str]
+    workingDir: str = ""
     ports: List[ContainerPort] = []
     envFrom: List[EnvFromSource] = []
     env: List[EnvVar] = []
-    resources: Optional[ResourceRequirements]
+    resources: ResourceRequirements = ResourceRequirements()
     volumeMounts: List[VolumeMount] = []
     volumeDevices: List[VolumeDevice] = []
     livenessProbe: Optional[Probe]
@@ -520,8 +522,8 @@ class Container(KubeModel):
 
 
 class Sysctl(KubeModel):
-    name: str
-    value: str
+    name: str = ""
+    value: str = ""
 
 
 class PodSecurityContext(KubeModel):
@@ -545,8 +547,8 @@ class NodeSelectorOperator(KubeEnum):
 
 
 class NodeSelectorRequirement(KubeModel):
-    key: str
-    operator: NodeSelectorOperator
+    key: str = ""
+    operator: Optional[NodeSelectorOperator]
     values: List[str] = []
 
 
@@ -560,8 +562,8 @@ class NodeSelector(KubeModel):
 
 
 class PreferredSchedulingTerm(KubeModel):
-    weight: int = Field(..., ge=1, le=100)
-    preference: NodeSelectorTerm
+    weight: int = Field(None, ge=1, le=100)
+    preference: NodeSelectorTerm = NodeSelectorTerm()
 
 
 class NodeAffinity(KubeModel):
@@ -572,22 +574,22 @@ class NodeAffinity(KubeModel):
 class PodAffinityTerm(KubeModel):
     labelSelector: Optional[LabelSelector]
     namespaces: List[str] = []
-    topologyKey: str
+    topologyKey: str = ""
 
 
 class WeightedPodAffinityTerm(KubeModel):
-    weight: int = Field(..., ge=1, le=100)
-    podAffinityTerm: PodAffinityTerm
+    weight: int = Field(None, ge=1, le=100)
+    podAffinityTerm: PodAffinityTerm = PodAffinityTerm()
 
 
 class PodAffinity(KubeModel):
-    requiredDuringSchedulingIgnoredDuringExecution: Optional[PodAffinityTerm]
-    preferredDuringSchedulingIgnoredDuringExecution: Optional[WeightedPodAffinityTerm]
+    requiredDuringSchedulingIgnoredDuringExecution: List[PodAffinityTerm] = []
+    preferredDuringSchedulingIgnoredDuringExecution: List[WeightedPodAffinityTerm] = []
 
 
 class PodAntiAffinity(KubeModel):
-    requiredDuringSchedulingIgnoredDuringExecution: Optional[PodAffinityTerm]
-    preferredDuringSchedulingIgnoredDuringExecution: Optional[WeightedPodAffinityTerm]
+    requiredDuringSchedulingIgnoredDuringExecution: List[PodAffinityTerm] = []
+    preferredDuringSchedulingIgnoredDuringExecution: List[WeightedPodAffinityTerm] = []
 
 
 class Affinity(KubeModel):
@@ -608,20 +610,20 @@ class TaintEffect(KubeEnum):
 
 
 class Toleration(KubeModel):
-    key: Optional[str]
-    operator: Optional[TolerationOperator]
-    value: Optional[str]
+    key: str = ""
+    operator: TolerationOperator = TolerationOperator.Equal
+    value: str = ""
     effect: Optional[TaintEffect]
     tolerationSeconds: Optional[int]
 
 
 class HostAlias(KubeModel):
-    ip: str
+    ip: str = ""
     hostnames: List[str] = []
 
 
 class PodDNSConfigOption(KubeModel):
-    name: str
+    name: str = ""
     value: Optional[str]
 
 
@@ -645,16 +647,16 @@ class ConditionStatus(KubeEnum):
 
 
 class PodCondition(KubeModel):
-    type: PodConditionType
-    status: ConditionStatus
-    lastProbeTime: Optional[datetime]
-    lastTransitionTime: Optional[datetime]
-    reason: Optional[str]
-    message: Optional[str]
+    type: Optional[PodConditionType]
+    status: Optional[ConditionStatus]
+    lastProbeTime: datetime = DefaultDatetime
+    lastTransitionTime: datetime = DefaultDatetime
+    reason: str = ""
+    message: str = ""
 
 
 class PodReadinessGate(KubeModel):
-    conditionType: PodConditionType
+    conditionType: Optional[PodConditionType]
 
 
 class UnsatisfiableConstraintAction(KubeEnum):
@@ -663,9 +665,9 @@ class UnsatisfiableConstraintAction(KubeEnum):
 
 
 class TopologySpreadConstraint(KubeModel):
-    maxSkew: int
-    topologyKey: str
-    whenUnsatisfiable: UnsatisfiableConstraintAction
+    maxSkew: int = 1
+    topologyKey: str = ""
+    whenUnsatisfiable: Optional[UnsatisfiableConstraintAction]
     labelSelector: Optional[LabelSelector]
 
 
@@ -696,36 +698,36 @@ class PodSpec(KubeModel):
     terminationGracePeriodSeconds: int = 30
     activeDeadlineSeconds: Optional[int]
     dnsPolicy: Optional[DNSPolicy]
-    serviceAccountName: Optional[str]
-    serviceAccount: Optional[str]
+    serviceAccountName: str = ""
+    serviceAccount: str = ""
     automountServiceAccountToken: Optional[bool]
-    nodeName: Optional[str]
-    hostNetwork: Optional[bool]
-    hostPID: Optional[bool]
-    hostIPC: Optional[bool]
-    shareProcessNamespace: Optional[bool]
+    nodeName: str = ""
+    hostNetwork: bool = False
+    hostPID: bool = False
+    hostIPC: bool = False
+    shareProcessNamespace: bool = False
     securityContext: Optional[PodSecurityContext]
     imagePullSecrets: List[LocalObjectReference] = []
-    hostname: Optional[str]
-    subdomain: Optional[str]
+    hostname: str = ""
+    subdomain: str = ""
     affinity: Optional[Affinity]
-    schedulerName: Optional[str]
+    schedulerName: str = ""
     tolerations: List[Toleration] = []
     hostAliases: List[HostAlias] = []
-    priorityClassName: Optional[str]
+    priorityClassName: str = ""
     priority: Optional[int]
     dnsConfig: Optional[PodDNSConfig]
     readinessGates: List[PodReadinessGate] = []
     runtimeClassName: Optional[str]
     enableServiceLinks: Optional[bool]
     preemptionPolicy: Optional[PreemptionPolicy]
-    overhead: Optional[ResourceList]
+    overhead: ResourceList = {}
     topologySpreadConstraints: List[TopologySpreadConstraint] = []
 
 
 class PodTemplateSpec(KubeModel):
-    metadata: ObjectMeta
-    spec: Optional[PodSpec]
+    metadata: ObjectMeta = ObjectMeta()
+    spec: PodSpec = PodSpec()
 
 
 class PodPhase(KubeEnum):
@@ -737,26 +739,26 @@ class PodPhase(KubeEnum):
 
 
 class PodIP(KubeModel):
-    ip: str
+    ip: str = ""
 
 
 class ContainerStateWaiting(KubeModel):
-    reason: Optional[str]
-    message: Optional[str]
+    reason: str = ""
+    message: str = ""
 
 
 class ContainerStateRunning(KubeModel):
-    startedAt: Optional[datetime]
+    startedAt: datetime = DefaultDatetime
 
 
 class ContainerStateTerminated(KubeModel):
-    exitCode: int
-    signal: Optional[int]
-    reason: Optional[str]
-    message: Optional[str]
-    startedAt: Optional[datetime]
-    finishedAt: Optional[datetime]
-    containerID: Optional[str]
+    exitCode: int = 0
+    signal: int = 0
+    reason: str = ""
+    message: str = ""
+    startedAt: datetime = DefaultDatetime
+    finishedAt: datetime = DefaultDatetime
+    containerID: str = ""
 
 
 class ContainerState(KubeModel):
@@ -766,14 +768,14 @@ class ContainerState(KubeModel):
 
 
 class ContainerStatus(KubeModel):
-    name: str
-    state: Optional[ContainerState]
-    lastState: Optional[ContainerState]
-    ready: bool
-    restartCount: int
-    image: str
-    imageID: str
-    containerID: Optional[str]
+    name: str = ""
+    state: ContainerState = ContainerState()
+    lastState: ContainerState = ContainerState()
+    ready: bool = False
+    restartCount: int = 0
+    image: str = ""
+    imageID: str = ""
+    containerID: str = ""
     started: Optional[bool]
 
 
@@ -786,11 +788,11 @@ class PodQOSClass(KubeEnum):
 class PodStatus(KubeModel):
     phase: Optional[PodPhase]
     conditions: List[PodCondition] = []
-    message: Optional[str]
-    reason: Optional[str]
-    nominatedNodeName: Optional[str]
-    hostIP: Optional[str]
-    podIP: Optional[str]
+    message: str = ""
+    reason: str = ""
+    nominatedNodeName: str = ""
+    hostIP: str = ""
+    podIP: str = ""
     podIPs: List[PodIP] = []
     startTime: Optional[datetime]
     initContainerStatuses: List[ContainerStatus] = []
@@ -799,12 +801,12 @@ class PodStatus(KubeModel):
     ephemeralContainerStatuses: List[ContainerStatus] = []
 
 
-class Pod(TypeMeta):
-    metadata: Optional[ObjectMeta]
-    spec: Optional[PodSpec]
-    status: Optional[PodStatus]
+class Pod(TypeMeta, KubeModel):
+    metadata: ObjectMeta = ObjectMeta()
+    spec: PodSpec = PodSpec()
+    status: PodStatus = PodStatus()
 
 
-class PodList(TypeMeta):
+class PodList(TypeMeta, KubeModel):
     metadata: Optional[ListMeta]
     items: List[Pod] = []
