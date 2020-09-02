@@ -3,8 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from pydantic.fields import Field
-
+from airport.kube.api import DefaultDatetime
 from airport.kube.api import KubeEnum
 from airport.kube.api import KubeModel
 from airport.kube.api import ListMeta
@@ -27,37 +26,37 @@ PodgroupNamePrefix = "podgroup-"
 
 
 class VolumeSpec(KubeModel):
-    mountPath: str
-    volumeClaimName: Optional[str]
+    mountPath: str = ""
+    volumeClaimName: str = ""
     volumeClaim: Optional[PersistentVolumeClaimSpec]
 
 
 class LifecyclePolicy(KubeModel):
     action: Optional[Action]
     event: Optional[Event]
-    events: List[Event]
+    events: List[Event] = []
     exitCode: Optional[int]
     timeout: Optional[str]
 
 
 class TaskSpec(KubeModel):
-    name: Optional[str]
-    replicas: Optional[int]
-    template: Optional[PodTemplateSpec]
+    name: str = ""
+    replicas: int = 0
+    template: PodTemplateSpec = PodTemplateSpec()
     policies: List[LifecyclePolicy] = []
 
 
 class JobSpec(KubeModel):
-    schedulerName: Optional[str]
-    minAvailable: Optional[int]
-    volumes: List[VolumeSpec] = Field(default_factory=list)
-    tasks: List[TaskSpec] = Field(default_factory=list)
-    policies: List[LifecyclePolicy] = Field(default_factory=list)
-    plugins: Dict[str, List[str]] = Field(default=dict)
-    queue: Optional[str]
+    schedulerName: str = ""
+    minAvailable: str = ""
+    volumes: List[VolumeSpec] = []
+    tasks: List[TaskSpec] = []
+    policies: List[LifecyclePolicy] = []
+    plugins: Dict[str, List[str]] = {}
+    queue: str = ""
     maxRetry: int = 3
     ttlSecondsAfterFinished: Optional[int]
-    priorityClassName: Optional[str]
+    priorityClassName: str = ""
 
 
 class JobPhase(KubeEnum):
@@ -75,9 +74,9 @@ class JobPhase(KubeEnum):
 
 class JobState(KubeModel):
     phase: Optional[JobPhase]
-    reason: Optional[str]
-    message: Optional[str]
-    lastTransitionTime: Optional[datetime]
+    reason: str = ""
+    message: str = ""
+    lastTransitionTime: datetime = DefaultDatetime
 
 
 class JobEvent(KubeEnum):
@@ -91,24 +90,24 @@ class JobEvent(KubeEnum):
 
 class JobStatus(KubeModel):
     state: Optional[JobState]
-    minAvailable: Optional[int]
-    pending: Optional[int]
-    running: Optional[int]
-    succeeded: Optional[int]
-    failed: Optional[int]
-    terminating: Optional[int]
-    unknown: Optional[int]
-    version: Optional[int]
-    retryCount: Optional[int]
-    controlledResources: Dict[str, str]
+    minAvailable: int = 0
+    pending: int = 0
+    running: int = 0
+    succeeded: int = 0
+    failed: int = 0
+    terminating: int = 0
+    unknown: int = 0
+    version: int = 0
+    retryCount: int = 0
+    controlledResources: Dict[str, str] = {}
 
 
-class Job(TypeMeta):
-    metadata: ObjectMeta
-    spec: JobSpec
-    status: JobStatus
+class Job(TypeMeta, KubeModel):
+    metadata: ObjectMeta = ObjectMeta()
+    spec: JobSpec = JobSpec()
+    status: JobStatus = JobStatus()
 
 
 class JobList(TypeMeta):
-    metadata: ListMeta
-    items: List[Job]
+    metadata: ListMeta = ListMeta()
+    items: List[Job] = []

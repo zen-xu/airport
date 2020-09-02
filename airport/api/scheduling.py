@@ -3,6 +3,7 @@ from typing import List
 from typing import Optional
 
 from airport.kube.api import ConditionStatus
+from airport.kube.api import DefaultDatetime
 from airport.kube.api import KubeEnum
 from airport.kube.api import KubeModel
 from airport.kube.api import ListMeta
@@ -30,10 +31,10 @@ class QueueAction(KubeEnum):
 
 
 class PodGroupSpec(KubeModel):
-    minMember: int
-    queue: Optional[str]
-    priorityClassName: Optional[str]
-    minResources: ResourceList
+    minMember: int = 0
+    queue: str = ""
+    priorityClassName: str = ""
+    minResources: ResourceList = {}
 
 
 class PodGroupPhase(KubeEnum):
@@ -49,37 +50,37 @@ class PodGroupConditionType(KubeEnum):
 
 
 class PodGroupCondition(KubeModel):
-    type: PodGroupConditionType
-    status: ConditionStatus
-    transitionID: str
-    lastTransitionTime: Optional[datetime]
-    reason: Optional[str]
-    message: Optional[str]
+    type: Optional[PodGroupConditionType]
+    status: Optional[ConditionStatus]
+    transitionID: str = ""
+    lastTransitionTime: datetime = DefaultDatetime
+    reason: str = ""
+    message: str = ""
 
 
 class PodGroupStatus(KubeModel):
-    phase: PodGroupPhase
-    conditions: PodGroupCondition
-    running: Optional[int]
-    succeeded: Optional[int]
-    failed: Optional[int]
+    phase: Optional[PodGroupPhase]
+    conditions: List[PodGroupCondition] = []
+    running: int = 0
+    succeeded: int = 0
+    failed: int = 0
 
 
-class PodGroup(TypeMeta):
-    metadata: ObjectMeta
-    spec: Optional[PodGroupSpec]
-    status: Optional[PodGroupStatus]
+class PodGroup(TypeMeta, KubeModel):
+    metadata: ObjectMeta = ObjectMeta()
+    spec: PodGroupSpec = PodGroupSpec()
+    status: PodGroupStatus = PodGroupStatus()
 
 
-class PodGroupList(TypeMeta):
-    metadata: ListMeta
+class PodGroupList(TypeMeta, KubeModel):
+    metadata: ListMeta = ListMeta()
     items: List[PodGroup] = []
 
 
 class QueueSpec(KubeModel):
-    weight: int
-    capability: ResourceList
-    reclaimable: bool
+    weight: int = 0
+    capability: ResourceList = {}
+    reclaimable: Optional[bool]
 
 
 class QueueState(KubeEnum):
@@ -90,19 +91,19 @@ class QueueState(KubeEnum):
 
 
 class QueueStatus(KubeModel):
-    state: QueueState
-    unknown: int
-    pending: int
-    running: int
-    inqueue: int
+    state: Optional[QueueState]
+    unknown: int = 0
+    pending: int = 0
+    running: int = 0
+    inqueue: int = 0
 
 
-class Queue(TypeMeta):
-    metadata: ObjectMeta
-    spec: Optional[QueueSpec]
-    status: Optional[QueueStatus]
+class Queue(TypeMeta, KubeModel):
+    metadata: ObjectMeta = ObjectMeta()
+    spec: QueueSpec = QueueSpec()
+    status: QueueStatus = QueueStatus()
 
 
-class QueueList(TypeMeta):
-    metadata: ListMeta
-    items: List[Queue]
+class QueueList(TypeMeta, KubeModel):
+    metadata: ListMeta = ListMeta()
+    items: List[Queue] = []
