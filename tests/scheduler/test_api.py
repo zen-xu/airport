@@ -473,7 +473,7 @@ class TestTaskInfo:
 
     def test_get_job_id_no_namespace(self, pod: Pod):
         pod.metadata.namespace = ""
-        assert job_info.get_job_id(pod) == "/demo-job"
+        assert job_info.get_job_id(pod) == ""
 
     def test_get_pod_resource_without_init_container(self, pod: Pod, empty_pod: Pod):
         assert job_info.get_pod_resource_without_init_container(pod) == Resource.new(
@@ -496,11 +496,18 @@ class TestTaskInfo:
             (
                 {
                     "metadata": {"deletionTimestamp": datetime.now()},
+                    "status": {"phase": "Running"},
+                },
+                TaskStatus.Releasing,
+            ),
+            (
+                {
+                    "metadata": {"deletionTimestamp": datetime.now()},
                     "status": {"phase": "Pending"},
                 },
                 TaskStatus.Releasing,
             ),
-            ({"status": {"phase": "Pending"}}, TaskStatus.Running,),
+            ({"status": {"phase": "Pending"}}, TaskStatus.Bound,),
             ({"status": {"phase": "Unknown"}}, TaskStatus.Unknown,),
             ({"status": {"phase": "Succeeded"}}, TaskStatus.Succeeded,),
             ({"status": {"phase": "Failed"}}, TaskStatus.Failed,),
