@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 
+from airport.kube.api import KubeModel
 from airport.kube.api import ResourceQuantity
 
 
@@ -52,3 +53,8 @@ def test_resource_quantity_ops(name, op, excepted):
         assert excepted[1].__class__ == ResourceQuantity
     else:
         assert op.__class__ == ResourceQuantity
+
+
+@parametrize("subclass", KubeModel.__subclasses__())
+def test_all_kube_models_have_default_value(subclass):
+    subclass()
