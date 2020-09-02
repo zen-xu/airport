@@ -13,3 +13,11 @@ class TaskStatus(IntEnum):
     Succeeded = auto()
     Failed = auto()
     Unknown = auto()
+
+    def is_allocated(self):
+        return self in [
+            TaskStatus.Bound,
+            TaskStatus.Binding,
+            TaskStatus.Running,
+            TaskStatus.Allocated,
+        ]
