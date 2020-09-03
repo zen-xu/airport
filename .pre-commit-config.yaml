@@ -3,6 +3,7 @@ repos:
     rev: stable
     hooks:
       - id: black
+        exclude: ^(docs/|example-plugin/|tests/|fixtures/)
 
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.4.2
