@@ -3,10 +3,6 @@ from typing import Tuple
 
 import pytest
 
-from returns.result import Failure
-from returns.result import Result
-from returns.result import Success
-
 from airport.api.scheduling import KubeGroupNameAnnotationKey
 from airport.kube.api import Pod
 from airport.kube.api import ResourceQuantity
@@ -60,24 +56,22 @@ class TestResourceInfo:
     @parametrize(
         "resource_name,quantity",
         [
-            ("cpu", Success(100)),
-            ("memory", Success(100)),
-            ("nvidia.com/gpu", Success(100)),
-            ("nvidia.com/cpu", Failure(ValueError("Unknown resource nvidia.com/cpu"))),
+            ("cpu", 100),
+            ("memory", 100),
+            ("nvidia.com/gpu", 100),
+            pytest.param(
+                "nvidia.com/cpu", None, marks=pytest.mark.xfail(raises=ValueError)
+            ),
         ],
     )
-    def test_get(
-        self, resource_name: str, quantity: Result[ResourceQuantity, ValueError]
-    ):
+    def test_get(self, resource_name: str, quantity: ResourceQuantity):
         resource = Resource(
             milli_cpu=ResourceQuantity(100),
             memory=ResourceQuantity(100),
             scalar_resources={"nvidia.com/gpu": ResourceQuantity(100)},
         )
         result = resource.get(resource_name)
-        assert result.alt(lambda exception: exception.args) == quantity.alt(
-            lambda exception: exception.args
-        )
+        assert result == quantity
 
     def test_set_scalar_resource(self):
         empty_resource = Resource()
@@ -104,27 +98,23 @@ class TestResourceInfo:
     @parametrize(
         "resource_list,resource_name,is_zero",
         [
-            ({"cpu": "9m", "memory": "9Mi"}, "cpu", Success(True)),
-            ({"cpu": "10m", "memory": "10Mi"}, "cpu", Success(False)),
-            ({"cpu": "9m", "memory": "9Mi"}, "memory", Success(True)),
-            ({"cpu": "10m", "memory": "10Mi"}, "memory", Success(False)),
-            ({"nvidia.com/gpu": "9m"}, "nvidia.com/gpu", Success(True)),
-            ({"nvidia.com/gpu": "10m"}, "nvidia.com/gpu", Success(False)),
-            (
+            ({"cpu": "9m", "memory": "9Mi"}, "cpu", True),
+            ({"cpu": "10m", "memory": "10Mi"}, "cpu", False),
+            ({"cpu": "9m", "memory": "9Mi"}, "memory", True),
+            ({"cpu": "10m", "memory": "10Mi"}, "memory", False),
+            ({"nvidia.com/gpu": "9m"}, "nvidia.com/gpu", True),
+            ({"nvidia.com/gpu": "10m"}, "nvidia.com/gpu", False),
+            pytest.param(
                 {"cpu": "10m", "memory": "10Mi"},
                 "nvidia.com/gpu",
-                Failure(ValueError("Unknown resource nvidia.com/gpu")),
+                None,
+                marks=pytest.mark.xfail(raises=ValueError),
             ),
         ],
     )
-    def test_is_zero(
-        self, resource_list: dict, resource_name: str, is_zero: Result[bool, ValueError]
-    ):
+    def test_is_zero(self, resource_list: dict, resource_name: str, is_zero: bool):
         resource = Resource.new(resource_list)
-
-        resource.is_zero(resource_name).alt(
-            lambda exception: exception.args
-        ) == is_zero.alt(lambda exception: exception.args)
+        assert resource.is_zero(resource_name) == is_zero
 
     @parametrize(
         "left_resource_list,right_resource_list,excepted",

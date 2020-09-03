@@ -6,9 +6,6 @@ from typing import Type
 from typing import Union
 
 from pydantic import BaseModel
-from returns.result import Failure
-from returns.result import Result
-from returns.result import Success
 
 from airport.kube import helper
 from airport.kube.api import ResourceList
@@ -52,16 +49,16 @@ class Resource(BaseModel):
 
         return resource
 
-    def get(self, resource_name: str) -> Result[ResourceQuantity, ValueError]:
+    def get(self, resource_name: str) -> ResourceQuantity:
         if resource_name == "cpu":
-            return Success(self.milli_cpu)
+            return self.milli_cpu
         elif resource_name == "memory":
-            return Success(self.memory)
+            return self.memory
         else:
             try:
-                return Success(self.scalar_resources[resource_name])
+                return self.scalar_resources[resource_name]
             except KeyError:
-                return Failure(ValueError(f"Unknown resource {resource_name}"))
+                raise ValueError(f"Unknown resource {resource_name}")
 
     def set_scalar_resource(
         self, resource_name: str, quantity: Union[float, ResourceQuantity]
@@ -82,21 +79,21 @@ class Resource(BaseModel):
 
         return True
 
-    def is_zero(self, resource_name: str) -> Result[bool, ValueError]:
+    def is_zero(self, resource_name: str) -> bool:
         """
         Checks whether that resource is less than min possible value
         """
 
         if resource_name == "cpu":
-            return Success(self.milli_cpu < MinMilliCpu)
+            return self.milli_cpu < MinMilliCpu
         elif resource_name == "memory":
-            return Success(self.memory < MinMemory)
+            return self.memory < MinMemory
         else:
             try:
                 quantity = self.scalar_resources[resource_name]
-                return Success(quantity < MinMilliScalarResources)
+                return quantity < MinMilliScalarResources
             except KeyError:
-                return Failure(ValueError(f"Unknown resource {resource_name}"))
+                raise ValueError(f"Unknown resource {resource_name}")
 
     def set_max_resource(self, other: "Resource") -> "Resource":
         self.milli_cpu = max(self.milli_cpu, other.milli_cpu)
