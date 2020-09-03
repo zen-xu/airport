@@ -1,3 +1,4 @@
+from ._enums import TaskStatus
 from ._job_info import JobInfo
 from ._job_info import TaskInfo
 from ._pod_group_info import PodGroup
