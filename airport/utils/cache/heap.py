@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from threading import Condition
 from threading import Lock
 from threading import RLock
-from typing import Callable
 from typing import Dict
 from typing import Generic
 from typing import List
@@ -42,7 +41,6 @@ class HeapLessFuncError(HeapError):
 
 
 T = TypeVar("T")
-Self = TypeVar("Self")
 
 
 class HeapItem(BaseModel, Generic[T]):
@@ -55,8 +53,14 @@ class ItemKeyValue(BaseModel, Generic[T]):
     obj: T
 
 
-KeyFunc = Callable[[Self, T], str]
-LessFunc = Callable[[Self, T, T], bool]
+class KeyFunc(Protocol):
+    def __call__(self, obj: T) -> str:
+        ...
+
+
+class LessFunc(Protocol):
+    def __call__(self, obj1: T, obj2: T) -> bool:
+        ...
 
 
 class HeapData(BaseModel, Generic[T]):
