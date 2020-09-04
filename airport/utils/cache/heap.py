@@ -3,6 +3,7 @@ from dataclasses import field
 from threading import Condition
 from threading import Lock
 from threading import RLock
+from typing import Callable
 from typing import Dict
 from typing import Generic
 from typing import List
@@ -55,22 +56,28 @@ class ItemKeyValue(Generic[T]):
     obj: T
 
 
-class KeyFunc(Protocol):
-    def __call__(self, obj: T) -> str:
-        ...
-
-
-class LessFunc(Protocol):
-    def __call__(self, obj1: T, obj2: T) -> bool:
-        ...
+KeyFunc = Callable[[T], str]
+LessFunc = Callable[[T, T], bool]
 
 
 @dataclass
 class HeapData(Generic[T]):
-    key_func: KeyFunc
-    less_func: LessFunc
-    items: Dict[str, HeapItem[T]] = field(default_factory=dict)
-    queue: List[str] = field(default_factory=list)
+    items: Dict[str, HeapItem[T]] = field(init=False)
+    queue: List[str] = field(init=False)
+
+    def __init__(self, key_func: KeyFunc, less_func: LessFunc):
+        self._key_func = key_func
+        self._less_func = less_func
+        self.items = dict()
+        self.queue = list()
+
+    @property
+    def key_func(self) -> KeyFunc:
+        return self._key_func
+
+    @property
+    def less_func(self) -> LessFunc:
+        return self._less_func
 
     def less(self, i: int, j: int) -> bool:
         """
