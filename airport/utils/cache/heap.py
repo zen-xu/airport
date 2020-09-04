@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from dataclasses import field
 from threading import Condition
 from threading import Lock
 from threading import RLock
@@ -8,7 +9,6 @@ from typing import List
 from typing import Optional
 from typing import TypeVar
 
-from pydantic import BaseModel
 from typing_extensions import Protocol
 
 
@@ -43,12 +43,14 @@ class HeapLessFuncError(HeapError):
 T = TypeVar("T")
 
 
-class HeapItem(BaseModel, Generic[T]):
+@dataclass
+class HeapItem(Generic[T]):
     obj: T
     index: int
 
 
-class ItemKeyValue(BaseModel, Generic[T]):
+@dataclass
+class ItemKeyValue(Generic[T]):
     key: str
     obj: T
 
@@ -63,12 +65,12 @@ class LessFunc(Protocol):
         ...
 
 
-class HeapData(BaseModel, Generic[T]):
-    items: Dict[str, HeapItem[T]] = {}
-    queue: List[str] = []
-
+@dataclass
+class HeapData(Generic[T]):
     key_func: KeyFunc
     less_func: LessFunc
+    items: Dict[str, HeapItem[T]] = field(default_factory=dict)
+    queue: List[str] = field(default_factory=list)
 
     def less(self, i: int, j: int) -> bool:
         """
