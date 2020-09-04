@@ -810,3 +810,45 @@ class Pod(TypeMeta, KubeModel):
 class PodList(TypeMeta, KubeModel):
     metadata: Optional[ListMeta]
     items: List[Pod] = []
+
+
+class ResourceQuotaScope(KubeEnum):
+    Terminating = "Terminating"
+    NotTerminating = "NotTerminating"
+    BestEffort = "BestEffort"
+    NotBestEffort = "NotBestEffort"
+    PriorityClass = "PriorityClass"
+
+
+class ScopeSelectorOperator(KubeEnum):
+    In = "In"
+    NotIn = "NotIn"
+    Exists = "Exists"
+    DoesNotExist = "DoesNotExist"
+
+
+class ScopedResourceSelectorRequirement(KubeModel):
+    scopeName: Optional[ResourceQuotaScope]
+    operator: Optional[ScopeSelectorOperator]
+    values: List[str] = []
+
+
+class ScopeSelector(KubeModel):
+    matchExpressions: List[ScopedResourceSelectorRequirement] = []
+
+
+class ResourceQuotaSpec(KubeModel):
+    hard: ResourceList = {}
+    scopes: List[ResourceQuotaScope] = []
+    scopeSelector: Optional[ScopeSelector]
+
+
+class ResourceQuotaStatus(KubeModel):
+    hard: ResourceList = {}
+    used: ResourceList = {}
+
+
+class ResourceQuota(TypeMeta, KubeModel):
+    metadata: Optional[ObjectMeta] = ObjectMeta()
+    spec: ResourceQuotaSpec = ResourceQuotaSpec()
+    status: ResourceQuotaStatus = ResourceQuotaStatus()
