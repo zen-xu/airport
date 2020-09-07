@@ -1,18 +1,17 @@
-from enum import IntEnum
-from enum import auto
+from enum import Enum
 
 
-class TaskStatus(IntEnum):
-    Pending = auto()
-    Allocated = auto()
-    Pipelined = auto()
-    Binding = auto()
-    Bound = auto()
-    Running = auto()
-    Releasing = auto()
-    Succeeded = auto()
-    Failed = auto()
-    Unknown = auto()
+class TaskStatus(str, Enum):
+    Pending = "Pending"
+    Allocated = "Allocated"
+    Pipelined = "Pipelined"
+    Binding = "Binding"
+    Bound = "Bound"
+    Running = "Running"
+    Releasing = "Releasing"
+    Succeeded = "Succeeded"
+    Failed = "Failed"
+    Unknown = "Unknown"
 
     def is_allocated(self):
         return self in [
