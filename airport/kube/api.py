@@ -852,3 +852,129 @@ class ResourceQuota(TypeMeta, KubeModel):
     metadata: ObjectMeta = ObjectMeta()
     spec: ResourceQuotaSpec = ResourceQuotaSpec()
     status: ResourceQuotaStatus = ResourceQuotaStatus()
+
+
+class Taint(BaseModel):
+    key: str = ""
+    value: str = ""
+    effect: Optional[TaintEffect]
+    timeAdded: Optional[datetime]
+
+
+class ConfigMapNodeConfigSource(KubeModel):
+    namespace: str = ""
+    name: str = ""
+    uid: str = ""
+    resourceVersion: str = ""
+    kubeletConfigKey: str = ""
+
+
+class NodeConfigSource(BaseModel):
+    configMap: Optional[ConfigMapNodeConfigSource]
+
+
+class NodeSpec(KubeModel):
+    podCIDR: str = ""
+    podCIDRs: List[str] = []
+    providerID: str = ""
+    unschedulable: bool = False
+    taint: List[Taint] = []
+    configSource: Optional[NodeConfigSource]
+    externalID: str = ""
+
+
+class NodePhase(KubeEnum):
+    Pending = "Pending"
+    Running = "Running"
+    Terminated = "Terminated"
+
+
+class NodeConditionType(KubeEnum):
+    Ready = "Ready"
+    MemoryPressure = "MemoryPressure"
+    DiskPressure = "DiskPressure"
+    PIDPressure = "PIDPressure"
+    NetworkUnavailable = "NetworkUnavailable"
+
+
+class NodeCondition(KubeModel):
+    type: Optional[NodeConditionType]
+    status: Optional[ConditionStatus]
+    lastHeartbeatTime: datetime = DefaultDatetime
+    lastTransitionTime: datetime = DefaultDatetime
+    reason: str = ""
+    message: str = ""
+
+
+class NodeAddressType(KubeEnum):
+    Hostname = "Hostname"
+    ExternalIP = "ExternalIP"
+    InternalIP = "InternalIP"
+    ExternalDNS = "ExternalDNS"
+    InternalDNS = "InternalDNS"
+
+
+class NodeAddress(KubeModel):
+    type: Optional[NodeAddressType]
+    address: str = ""
+
+
+class DaemonEndpoint(KubeModel):
+    port: int = 0
+
+
+class NodeDaemonEndpoints(KubeModel):
+    kubeletEndpoint: DaemonEndpoint = DaemonEndpoint()
+
+
+class NodeSystemInfo(KubeModel):
+    machineID: str = ""
+    systemUUID: str = ""
+    bootID: str = ""
+    kernelVersion: str = ""
+    osImage: str = ""
+    containerRuntimeVersion: str = ""
+    kubeletVersion: str = ""
+    kubeProxyVersion: str = ""
+    operatingSystem: str = ""
+    architecture: str = ""
+
+
+class ContainerImage(KubeModel):
+    names: List[str] = []
+    sizeBytes: int = 0
+
+
+UniqueVolumeName = str
+
+
+class AttachedVolume(KubeModel):
+    name: UniqueVolumeName
+    devicePath: str
+
+
+class NodeConfigStatus(KubeModel):
+    assigned: Optional[NodeConfigSource]
+    active: Optional[NodeConfigSource]
+    lastKnownGood: Optional[NodeConfigSource]
+    error: str = ""
+
+
+class NodeStatus(KubeModel):
+    capacity: ResourceList = {}
+    allocatable: ResourceList = {}
+    phase: Optional[NodePhase]
+    conditions: List[NodeCondition] = []
+    addresses: List[NodeAddress] = []
+    daemonEndpoints: NodeDaemonEndpoints = NodeDaemonEndpoints()
+    nodeInfo: NodeSystemInfo = NodeSystemInfo()
+    images: List[ContainerImage] = []
+    volumesInUse: List[UniqueVolumeName] = []
+    volumesAttached: List[AttachedVolume] = []
+    config: Optional[NodeConfigStatus]
+
+
+class Node(TypeMeta, KubeModel):
+    metadata: ObjectMeta = ObjectMeta()
+    spec: NodeSpec = NodeSpec()
+    status: NodeStatus = NodeStatus()
