@@ -10,7 +10,7 @@ parametrize = pytest.mark.parametrize
 
 
 @parametrize(
-    "resource_quantity,excepted",
+    "resource_quantity,expected",
     [
         (ResourceQuantity("1"), "1"),
         (ResourceQuantity("1.1"), "1.1"),
@@ -19,12 +19,12 @@ parametrize = pytest.mark.parametrize
         (ResourceQuantity("10Mi"), str(10 * 1024 * 1024)),
     ],
 )
-def test_resource_quantity(resource_quantity, excepted):
-    assert resource_quantity == Decimal(excepted)
+def test_resource_quantity(resource_quantity, expected):
+    assert resource_quantity == Decimal(expected)
 
 
 @parametrize(
-    "name,op,excepted",
+    "name,op,expected",
     [
         ("add", ResourceQuantity(100) + 2, ResourceQuantity("102")),
         ("sub", ResourceQuantity(100) - 2, ResourceQuantity("98")),
@@ -46,11 +46,11 @@ def test_resource_quantity(resource_quantity, excepted):
         ("abs", abs(ResourceQuantity(-100)), ResourceQuantity("100")),
     ],
 )
-def test_resource_quantity_ops(name, op, excepted):
-    assert op == excepted
+def test_resource_quantity_ops(name, op, expected):
+    assert op == expected
     if name == "divmod":
-        assert excepted[0].__class__ == ResourceQuantity
-        assert excepted[1].__class__ == ResourceQuantity
+        assert expected[0].__class__ == ResourceQuantity
+        assert expected[1].__class__ == ResourceQuantity
     else:
         assert op.__class__ == ResourceQuantity
 
