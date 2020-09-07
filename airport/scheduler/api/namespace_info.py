@@ -34,7 +34,6 @@ class QuotaItem(BaseModel):
         except KeyError:
             weight = DefaultNamespaceWeight
 
-        assert quota.metadata is not None
         return cls(name=quota.metadata.name, weight=weight)
 
 

@@ -849,6 +849,6 @@ class ResourceQuotaStatus(KubeModel):
 
 
 class ResourceQuota(TypeMeta, KubeModel):
-    metadata: Optional[ObjectMeta] = ObjectMeta()
+    metadata: ObjectMeta = ObjectMeta()
     spec: ResourceQuotaSpec = ResourceQuotaSpec()
     status: ResourceQuotaStatus = ResourceQuotaStatus()
