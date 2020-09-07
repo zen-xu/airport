@@ -125,7 +125,7 @@ class LabelSelectorOperator(KubeEnum):
 
 class LabelSelectorRequirement(KubeModel):
     key: str = ""
-    operator: Optional[LabelSelectorOperator]
+    operator: LabelSelectorOperator
     values: List[str] = []
 
 
@@ -188,7 +188,7 @@ class PersistentVolumeClaimCondition(KubeEnum):
 
 
 class PersistentVolumeClaimStatus(KubeModel):
-    phase: Optional[PersistentVolumeClaimPhase]
+    phase: PersistentVolumeClaimPhase
     accessModes: List[PersistentVolumeAccessMode] = []
     capacity: ResourceList = {}
     conditions: List[PersistentVolumeClaimCondition] = []
@@ -548,7 +548,7 @@ class NodeSelectorOperator(KubeEnum):
 
 class NodeSelectorRequirement(KubeModel):
     key: str = ""
-    operator: Optional[NodeSelectorOperator]
+    operator: NodeSelectorOperator
     values: List[str] = []
 
 
@@ -613,7 +613,7 @@ class Toleration(KubeModel):
     key: str = ""
     operator: TolerationOperator = TolerationOperator.Equal
     value: str = ""
-    effect: Optional[TaintEffect]
+    effect: TaintEffect
     tolerationSeconds: Optional[int]
 
 
@@ -647,8 +647,8 @@ class ConditionStatus(KubeEnum):
 
 
 class PodCondition(KubeModel):
-    type: Optional[PodConditionType]
-    status: Optional[ConditionStatus]
+    type: PodConditionType
+    status: ConditionStatus
     lastProbeTime: datetime = DefaultDatetime
     lastTransitionTime: datetime = DefaultDatetime
     reason: str = ""
@@ -656,7 +656,7 @@ class PodCondition(KubeModel):
 
 
 class PodReadinessGate(KubeModel):
-    conditionType: Optional[PodConditionType]
+    conditionType: PodConditionType
 
 
 class UnsatisfiableConstraintAction(KubeEnum):
@@ -667,7 +667,7 @@ class UnsatisfiableConstraintAction(KubeEnum):
 class TopologySpreadConstraint(KubeModel):
     maxSkew: int = 1
     topologyKey: str = ""
-    whenUnsatisfiable: Optional[UnsatisfiableConstraintAction]
+    whenUnsatisfiable: UnsatisfiableConstraintAction
     labelSelector: Optional[LabelSelector]
 
 
@@ -694,10 +694,10 @@ class PodSpec(KubeModel):
     initContainers: List[Container] = []
     containers: List[Container] = []
     ephemeralContainers: List[EphemeralContainer] = []
-    restartPolicy: Optional[RestartPolicy]
+    restartPolicy: RestartPolicy = RestartPolicy.Always
     terminationGracePeriodSeconds: int = 30
     activeDeadlineSeconds: Optional[int]
-    dnsPolicy: Optional[DNSPolicy]
+    dnsPolicy: DNSPolicy = DNSPolicy.ClusterFirst
     serviceAccountName: str = ""
     serviceAccount: str = ""
     automountServiceAccountToken: Optional[bool]
@@ -786,7 +786,7 @@ class PodQOSClass(KubeEnum):
 
 
 class PodStatus(KubeModel):
-    phase: Optional[PodPhase]
+    phase: PodPhase
     conditions: List[PodCondition] = []
     message: str = ""
     reason: str = ""
@@ -797,14 +797,14 @@ class PodStatus(KubeModel):
     startTime: Optional[datetime]
     initContainerStatuses: List[ContainerStatus] = []
     containerStatuses: List[ContainerStatus] = []
-    qosClass: Optional[PodQOSClass]
+    qosClass: PodQOSClass
     ephemeralContainerStatuses: List[ContainerStatus] = []
 
 
 class Pod(TypeMeta, KubeModel):
     metadata: ObjectMeta = ObjectMeta()
     spec: PodSpec = PodSpec()
-    status: PodStatus = PodStatus()
+    status: Optional[PodStatus]
 
 
 class PodList(TypeMeta, KubeModel):
@@ -828,8 +828,8 @@ class ScopeSelectorOperator(KubeEnum):
 
 
 class ScopedResourceSelectorRequirement(KubeModel):
-    scopeName: Optional[ResourceQuotaScope]
-    operator: Optional[ScopeSelectorOperator]
+    scopeName: ResourceQuotaScope
+    operator: ScopeSelectorOperator
     values: List[str] = []
 
 
@@ -857,7 +857,7 @@ class ResourceQuota(TypeMeta, KubeModel):
 class Taint(BaseModel):
     key: str = ""
     value: str = ""
-    effect: Optional[TaintEffect]
+    effect: TaintEffect
     timeAdded: Optional[datetime]
 
 
@@ -898,8 +898,8 @@ class NodeConditionType(KubeEnum):
 
 
 class NodeCondition(KubeModel):
-    type: Optional[NodeConditionType]
-    status: Optional[ConditionStatus]
+    type: NodeConditionType
+    status: ConditionStatus
     lastHeartbeatTime: datetime = DefaultDatetime
     lastTransitionTime: datetime = DefaultDatetime
     reason: str = ""
@@ -915,7 +915,7 @@ class NodeAddressType(KubeEnum):
 
 
 class NodeAddress(KubeModel):
-    type: Optional[NodeAddressType]
+    type: NodeAddressType
     address: str = ""
 
 

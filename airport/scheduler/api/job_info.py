@@ -233,6 +233,9 @@ def get_pod_resource_without_init_container(pod: Pod) -> Resource:
 
 
 def get_task_status(pod: Pod) -> TaskStatus:
+    if pod.status is None:
+        return TaskStatus.Unknown
+
     if pod.status.phase == PodPhase.Running:
         if pod.metadata.deletionTimestamp is not None:
             return TaskStatus.Releasing
