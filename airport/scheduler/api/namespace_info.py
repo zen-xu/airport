@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from airport.kube.api import ResourceQuota
 from airport.utils.cache import Heap
 from airport.utils.cache import HeapError
+from airport.utils.cache import HeapObjectNotFound
 
 
 NamespaceWeightKey = "volcano.sh/namespace.weight"
@@ -68,7 +69,11 @@ class NamespaceCollection:
         self.update_weight(QuotaItem.new_from_resource_quota(quota))
 
     def delete(self, quota: ResourceQuota):
-        self.delete_weight(QuotaItem.new_from_resource_quota(quota))
+        try:
+            self.delete_weight(QuotaItem.new_from_resource_quota(quota))
+        except HeapObjectNotFound:
+            # ignore exception if quota not found
+            pass
 
     def snapshot(self) -> "NamespaceInfo":
         try:
