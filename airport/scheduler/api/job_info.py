@@ -11,9 +11,9 @@ from airport.kube.api import DefaultDatetime
 from airport.kube.api import Pod
 from airport.kube.api import PodPhase
 
-from ._enums import TaskStatus
-from ._pod_group_info import PodGroup
-from ._resource_info import Resource
+from .enums import TaskStatus
+from .pod_group_info import PodGroup
+from .resource_info import Resource
 
 
 class FailedToFindTask(Exception):

@@ -10,11 +10,11 @@ from airport.scheduler.api import JobInfo
 from airport.scheduler.api import PodGroup
 from airport.scheduler.api import Resource
 from airport.scheduler.api import TaskInfo
-from airport.scheduler.api import _job_info as job_info
-from airport.scheduler.api._enums import TaskStatus
-from airport.scheduler.api._resource_info import MinMemory
-from airport.scheduler.api._resource_info import MinMilliCpu
-from airport.scheduler.api._resource_info import MinMilliScalarResources
+from airport.scheduler.api import job_info as job_info
+from airport.scheduler.api.enums import TaskStatus
+from airport.scheduler.api.resource_info import MinMemory
+from airport.scheduler.api.resource_info import MinMilliCpu
+from airport.scheduler.api.resource_info import MinMilliScalarResources
 
 
 parametrize = pytest.mark.parametrize

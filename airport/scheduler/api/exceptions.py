@@ -1,4 +1,4 @@
 # flake8: noqa
 
-from ._job_info import FailedToFindTask
-from ._job_info import FitError
+from .job_info import FailedToFindTask
+from .job_info import FitError
