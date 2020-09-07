@@ -2,3 +2,4 @@
 omit =
     airport/kube/api.py
     airport/api/*
+    airport/scheduler/api/exceptions.py
