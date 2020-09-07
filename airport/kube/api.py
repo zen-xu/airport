@@ -7,6 +7,14 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
+
+try:
+    from yaml import CLoader as YamlLoader
+except ImportError:
+    from yaml import Loader as YamlLoader  # type: ignore
+
+import yaml
+
 from kubernetes.utils.quantity import parse_quantity
 from pydantic import BaseModel
 from pydantic.fields import Field
@@ -16,7 +24,13 @@ DefaultDatetime = datetime.fromtimestamp(0)
 
 
 class KubeModel(BaseModel):
-    ...
+    def yaml(self, **kwargs,) -> str:
+        return yaml.dump(self.dict(**kwargs))
+
+    @classmethod
+    def parse_yaml(cls, data: Union[str, bytes], *, loader=YamlLoader) -> "KubeModel":
+        data = yaml.load(data, Loader=loader)
+        return cls.parse_obj(data)
 
 
 class KubeEnum(str, Enum):
