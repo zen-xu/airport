@@ -5,6 +5,7 @@ from typing import TypeVar
 from pydantic import BaseModel
 
 from airport.kube.api import ResourceQuota
+from airport.logger import logger
 from airport.utils.cache import Heap
 from airport.utils.cache import HeapError
 from airport.utils.cache import HeapObjectNotFound
@@ -80,7 +81,9 @@ class NamespaceCollection:
             weight = quota_item.weight
             self.quota_weight.add(quota_item)
         except HeapError as e:
-            print(f"namespace {self.name}, quota weight meets error {e} when pop")
+            logger.warning(
+                f"namespace {self.name}, quota weight meets error {e} when pop"
+            )
             weight = DefaultNamespaceWeight
 
         return NamespaceInfo(name=self.name, weight=weight)
