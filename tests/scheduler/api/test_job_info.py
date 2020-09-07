@@ -87,29 +87,47 @@ class TestTaskInfo:
     @parametrize(
         "pod,task_status",
         [
-            ({"status": {"phase": "Running"}}, TaskStatus.Running,),
+            (
+                {"status": {"phase": "Running", "qosClass": "Guaranteed"}},
+                TaskStatus.Running,
+            ),
             (
                 {
                     "metadata": {"deletionTimestamp": datetime.now()},
-                    "status": {"phase": "Running"},
+                    "status": {"phase": "Running", "qosClass": "Guaranteed"},
                 },
                 TaskStatus.Releasing,
             ),
             (
                 {
                     "metadata": {"deletionTimestamp": datetime.now()},
-                    "status": {"phase": "Pending"},
+                    "status": {"phase": "Pending", "qosClass": "Guaranteed"},
                 },
                 TaskStatus.Releasing,
             ),
-            ({"status": {"phase": "Pending"}}, TaskStatus.Pending,),
             (
-                {"status": {"phase": "Pending"}, "spec": {"nodeName": "node1"}},
+                {"status": {"phase": "Pending", "qosClass": "Guaranteed"}},
+                TaskStatus.Pending,
+            ),
+            (
+                {
+                    "status": {"phase": "Pending", "qosClass": "Guaranteed"},
+                    "spec": {"nodeName": "node1"},
+                },
                 TaskStatus.Bound,
             ),
-            ({"status": {"phase": "Unknown"}}, TaskStatus.Unknown,),
-            ({"status": {"phase": "Succeeded"}}, TaskStatus.Succeeded,),
-            ({"status": {"phase": "Failed"}}, TaskStatus.Failed,),
+            (
+                {"status": {"phase": "Unknown", "qosClass": "Guaranteed"}},
+                TaskStatus.Unknown,
+            ),
+            (
+                {"status": {"phase": "Succeeded", "qosClass": "Guaranteed"}},
+                TaskStatus.Succeeded,
+            ),
+            (
+                {"status": {"phase": "Failed", "qosClass": "Guaranteed"}},
+                TaskStatus.Failed,
+            ),
         ],
     )
     def test_get_task_status(
@@ -149,7 +167,7 @@ def build_pod(namespace, name, node_name, pod_phase, resource_list):
                 "nodeName": node_name,
                 "containers": [{"resources": {"requests": resource_list}}],
             },
-            "status": {"phase": pod_phase},
+            "status": {"phase": pod_phase, "qosClass": "Guaranteed"},
         }
     )
 
