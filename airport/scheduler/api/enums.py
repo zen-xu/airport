@@ -1,7 +1,11 @@
 from enum import Enum
 
 
-class TaskStatus(str, Enum):
+class StrEnum(str, Enum):
+    ...
+
+
+class TaskStatus(StrEnum):
     Pending = "Pending"
     Allocated = "Allocated"
     Pipelined = "Pipelined"
@@ -20,3 +24,8 @@ class TaskStatus(str, Enum):
             TaskStatus.Running,
             TaskStatus.Allocated,
         ]
+
+
+class NodePhase(StrEnum):
+    Ready = "Ready"
+    NotReady = "NotReady"
