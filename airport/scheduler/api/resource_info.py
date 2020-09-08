@@ -199,19 +199,23 @@ class Resource(BaseModel):
 
         return True
 
+    def strict_equal(self, other: "Resource") -> bool:
+        return super().__eq__(other)
+
     def __lt__(self, other: "Resource") -> bool:
+        if self.strict_equal(other):
+            return False
+
         if self.milli_cpu > other.milli_cpu or self.memory > other.memory:
             return False
 
-        if not self.scalar_resources:
-            return True
-
-        if not other.scalar_resources:
+        if self.scalar_resources and not other.scalar_resources:
             return False
 
-        for resource_name, quant in self.scalar_resources.items():
-            if quant > other.scalar_resources.get(resource_name, 0):
-                return False
+        if self.scalar_resources and other.scalar_resources:
+            for resource_name, quant in self.scalar_resources.items():
+                if quant >= other.scalar_resources.get(resource_name, 0):
+                    return False
 
         return True
 

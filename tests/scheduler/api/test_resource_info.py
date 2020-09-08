@@ -328,6 +328,7 @@ def test_equal(left_resource_list: dict, right_resource_list: dict, expected: bo
         ({"cpu": "100m", "nvidia.com/gpu": "11m"}, {"cpu": "101m"}, False),
         ({"cpu": "100m", "nvidia.com/gpu": ""}, {"cpu": "300m"}, True),
         ({"cpu": "100m"}, {"cpu": "300m", "nvidia.com/gpu": ""}, True),
+        ({"cpu": "0m", "memory": "0Mi"}, {"cpu": "0m", "memory": "0Mi"}, False),
     ],
 )
 def test_less(left_resource_list: dict, right_resource_list: dict, expected: bool):
