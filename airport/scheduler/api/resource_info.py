@@ -255,3 +255,9 @@ class Resource(BaseModel):
             resource.scalar_resources[resource_name] *= ratio
 
         return resource
+
+    def __str__(self):
+        string = f"cpu {self.milli_cpu}, memory {self.memory}"
+        for name, quantity in self.scalar_resources.items():
+            string = f"{string}, {name} {quantity}"
+        return string

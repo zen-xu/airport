@@ -404,3 +404,8 @@ def test_multi(resource_list: dict, ratio: int, expected: dict):
     resource = Resource.new(resource_list)
     expected_resource = Resource.new(expected)
     assert resource * ratio == expected_resource
+
+
+def test_string():
+    resource = Resource.new({"cpu": "200m", "memory": "20Mi", "nvidia.com/gpu": "1Gi"})
+    assert str(resource) == "cpu 200.000, memory 20971520, nvidia.com/gpu 1073741824000"
