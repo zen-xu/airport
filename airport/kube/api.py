@@ -24,7 +24,10 @@ DefaultDatetime = datetime.fromtimestamp(0)
 
 
 class KubeModel(BaseModel):
-    def yaml(self, **kwargs,) -> str:
+    def yaml(
+        self,
+        **kwargs,
+    ) -> str:
         return yaml.dump(self.dict(**kwargs))
 
     @classmethod
